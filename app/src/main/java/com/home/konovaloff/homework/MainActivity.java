@@ -11,6 +11,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        this.setTitle(MyApp.getName());
     }
 
     @Override
@@ -24,11 +26,11 @@ public class MainActivity extends AppCompatActivity {
         boolean res;
         switch (item.getItemId()){
             case R.id.menu_add:
-
+                addItem();
                 res = true;
                 break;
             case R.id.menu_clear:
-
+                clear();
                 res = true;
                 break;
             default:
@@ -36,5 +38,13 @@ public class MainActivity extends AppCompatActivity {
                 break;
         }
         return res;
+    }
+
+    private void clear() {
+        Global.toast("Очищаем элементы");
+    }
+
+    private void addItem() {
+        Global.toast("Добавляем элемент");
     }
 }
