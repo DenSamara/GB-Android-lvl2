@@ -1,22 +1,22 @@
 package com.home.konovaloff.homework;
 
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 public final class DrawerNavigation extends Fragment{
     private final static String TAG = DrawerNavigation.class.getSimpleName();
 
     private NavigationView navigationView;
-    private TextView headerEmployeeId;
+    private ImageView imageView;
+    private TextView tvUserName;
 
     private NavigationView.OnNavigationItemSelectedListener listener;
 
@@ -35,8 +35,9 @@ public final class DrawerNavigation extends Fragment{
 
         View navigationHeader = navigationView.inflateHeaderView(R.layout.app_navigation_header);
 
-        headerEmployeeId = (TextView) navigationHeader
-                .findViewById(R.id.app_navigation_header_user);
+        imageView = navigationHeader.findViewById(R.id.app_navigation_image);
+        tvUserName = navigationHeader
+                .findViewById(R.id.app_navigation_username);
     }
 
     public void setNavigationItemSelectedListener(
@@ -47,15 +48,26 @@ public final class DrawerNavigation extends Fragment{
         }
     }
 
-    @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        Global.log_e(TAG, "onCreateOptionsMenu");
-        super.onCreateOptionsMenu(menu, inflater);
+    public void setImageClickListener(View.OnClickListener listener){
+        if (imageView != null){
+            imageView.setOnClickListener(listener);
+        }
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        Global.log_e(TAG, "onOptionsItemSelected");
-        return super.onOptionsItemSelected(item);
+    public void setUserNameClickListener(View.OnClickListener listener){
+        if (tvUserName != null){
+            tvUserName.setOnClickListener(listener);
+        }
     }
+
+    public void setUserName(String userName){
+        if (tvUserName != null)
+            tvUserName.setText(userName);
+    }
+
+    public void setUserImage(Bitmap image){
+        if (imageView != null)
+            imageView.setImageBitmap(image);
+    }
+
 }

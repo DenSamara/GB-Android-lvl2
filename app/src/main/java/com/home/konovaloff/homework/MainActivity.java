@@ -2,33 +2,46 @@ package com.home.konovaloff.homework;
 
 import android.animation.Animator;
 import android.animation.ValueAnimator;
+import android.app.Activity;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.graphics.Color;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
+import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
-import android.widget.ProgressBar;
+import android.widget.EditText;
 import android.widget.SearchView;
 import android.widget.Toast;
 
-public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener{
+import java.io.InputStream;
+
+public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, View.OnClickListener{
     public static final String COM_WHATSAPP = "com.whatsapp";
+    public static final String DEFAULT_USERNAME = "Гость";
+    public static final int IDD_SELECT_PHOTO = 1;
+
+    private static final String TAG = MainActivity.class.getSimpleName();
+
     private boolean doubleBackPress;
     private Handler handler;
 
@@ -68,6 +81,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             actionBar.setHomeButtonEnabled(true);
+            actionBar.setHomeAsUpIndicator(android.R.drawable.ic_menu_more);
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
 
@@ -78,7 +92,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         setDrawerToggleEnable(getSupportFragmentManager().getBackStackEntryCount() == 0);
 
         navigation.setNavigationItemSelectedListener(this);
-        navigation.setHasOptionsMenu(true);
+        navigation.setUserName(DEFAULT_USERNAME);
+        navigation.setImageClickListener(this);
+        navigation.setUserNameClickListener(this);
 
         handler = new Handler();
     }
@@ -293,5 +309,58 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
      */
     private void onSignOut() {
 
+    }
+
+    @Override
+    public void onClick(View view) {
+        switch (view.getId()){
+            case R.id.app_navigation_image:
+                //Вызываем диалог выбора картинки
+                Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
+                photoPickerIntent.setType("image/*");
+                startActivityForResult(photoPickerIntent, IDD_SELECT_PHOTO);
+                break;
+            case R.id.app_navigation_username:
+                // Get the layout inflater
+                LayoutInflater inflater = getLayoutInflater();
+                View v = inflater.inflate(R.layout.username, null);
+                final EditText editText = v.findViewById(R.id.username);
+                
+                new AlertDialog.Builder(this)
+                        .setTitle("Представьтесь, пожалуйста")
+                        .setView(v)
+                        .setPositiveButton("Изменить", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int whichButton) {
+                                if (editText != null)
+                                    navigation.setUserName(editText.getText().toString());
+                            }
+                        })
+                        .setNegativeButton("Отмена", new DialogInterface.OnClickListener() {
+                            public void onClick(DialogInterface dialog, int whichButton) {
+                                dialog.dismiss();
+                            }
+                        })
+                        .show();
+                break;
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        if (resultCode == Activity.RESULT_OK){
+            switch (requestCode){
+                case IDD_SELECT_PHOTO:
+                    try{
+                        Uri path = data.getData();
+                        InputStream inputStream = getContentResolver().openInputStream(path);
+                        Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+
+                        navigation.setUserImage(bitmap);
+                    }catch (Exception e){
+                        Global.log_e(TAG, e.toString());
+                    }
+                    break;
+            }
+        }
     }
 }

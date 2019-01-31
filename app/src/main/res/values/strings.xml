@@ -11,5 +11,6 @@
     <string name="download_update">Скачать обновление</string>
     <string name="contact_with_author">Написать автору</string>
     <string name="exit">Выйти</string>
+    <string name="username">Как вас зовут?</string>
 
 </resources>

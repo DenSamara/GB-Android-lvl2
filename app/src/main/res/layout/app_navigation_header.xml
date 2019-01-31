@@ -12,20 +12,22 @@
         android:paddingTop="8dp">
 
         <ImageView
+            android:id="@+id/app_navigation_image"
             android:layout_width="54dp"
             android:layout_height="54dp"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="8dp"
             android:contentDescription="@string/empty"
-            android:src="@android:drawable/btn_star_big_off"/>
+            android:src="@android:drawable/btn_star_big_off"
+            />
 
         <TextView
-            android:id="@+id/app_navigation_header_user"
+            android:id="@+id/app_navigation_username"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal"
             android:layout_marginTop="4dp"
-            android:textAppearance="@style/TextAppearance.AppCompat.Large.Inverse"
+            android:textAppearance="@style/TextAppearance.AppCompat.Large"
             />
 
     </LinearLayout>
