@@ -5,4 +5,9 @@
     android:id="@+id/app_navigation"
     android:layout_width="wrap_content"
     android:layout_height="match_parent"
-    app:menu="@menu/app_navigation_menu"/>
+    app:menu="@menu/app_navigation_menu"
+
+    app:itemTextColor="@color/active_selector"
+    app:itemIconTint="@color/active_selector"
+    app:itemBackground="@drawable/active_selector"
+    />

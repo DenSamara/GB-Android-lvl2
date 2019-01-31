@@ -6,12 +6,14 @@
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+
     </style>
 
     <!-- TODO: Разделить по версиям API -->
     <style name="Base.AppTheme.Widget.ActionBar" parent="ThemeOverlay.AppCompat.Dark.ActionBar">
         <item name="android:actionModeBackground">@color/colorPrimary</item>
         <item name="android:actionModeSplitBackground">@color/colorPrimaryDark</item>
-    </style>
+
+</style>
 
 </resources>

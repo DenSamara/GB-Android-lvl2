@@ -5,6 +5,7 @@ import android.animation.ValueAnimator;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Handler;
 import android.support.annotation.LayoutRes;
@@ -77,6 +78,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         setDrawerToggleEnable(getSupportFragmentManager().getBackStackEntryCount() == 0);
 
         navigation.setNavigationItemSelectedListener(this);
+        navigation.setHasOptionsMenu(true);
 
         handler = new Handler();
     }
@@ -100,7 +102,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private void setupSearch(Menu menu) {
         MenuItem search = menu.findItem (R.id.action_search ); // Поиск пункта меню поиска
-        SearchView searchText = (SearchView)search.getActionView (); // Строка поиска
+        SearchView searchText = (SearchView)search.getActionView(); // Строка поиска
         searchText.setOnQueryTextListener ( new SearchView.OnQueryTextListener () {
             // Реагирует на конец ввода поиска
             @Override
@@ -165,10 +167,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
     }
 
-    public DrawerLayout getDrawerLayout() {
-        return drawerLayout;
-    }
-
     private void setDrawerToggleEnable(boolean enable) {
         if (drawerToggle.isDrawerIndicatorEnabled() == enable) return;
 
@@ -221,12 +219,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     @Override
     public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+        item.setChecked(true);
+
         drawerLayout.closeDrawer(GravityCompat.START);
 
         switch (item.getItemId()) {
             case R.id.app_navigation_action_sync:
                 startSynchronization();
-                break;
+                return true;
             case R.id.app_navigation_whatsapp:
                 startActionWhatsApp();
                 return true;
@@ -240,12 +240,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 } catch (android.content.ActivityNotFoundException anfe) {
                     startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=" + appPackageName)));
                 }
-                break;
+                return true;
             case R.id.app_navigation_sign_out:
                 onSignOut();
-                break;
+                return true;
         }
-        return false;
+        return super.onOptionsItemSelected(item);
     }
 
     private void startActionWhatsApp() {

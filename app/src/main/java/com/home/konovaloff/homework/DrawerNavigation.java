@@ -5,11 +5,15 @@ import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
 public final class DrawerNavigation extends Fragment{
+    private final static String TAG = DrawerNavigation.class.getSimpleName();
 
     private NavigationView navigationView;
     private TextView headerEmployeeId;
@@ -44,8 +48,14 @@ public final class DrawerNavigation extends Fragment{
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        Global.log_e(TAG, "onCreateOptionsMenu");
+        super.onCreateOptionsMenu(menu, inflater);
     }
 
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        Global.log_e(TAG, "onOptionsItemSelected");
+        return super.onOptionsItemSelected(item);
+    }
 }
