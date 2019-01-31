@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <group android:id="@+id/app_actions">
+        <item
+            android:id="@+id/app_navigation_action_sync"
+            android:icon="@android:drawable/stat_sys_download"
+            android:orderInCategory="2"
+            android:title="@string/sync"
+            app:showAsAction="always" />
+    </group>
+
+    <group android:id="@+id/app_navigation">
+        <item
+            android:id="@+id/app_navigation_whatsapp"
+            android:icon="@android:drawable/ic_menu_share"
+            android:orderInCategory="2"
+            android:title="@string/contact_with_author"
+            app:showAsAction="ifRoom" />
+        <item
+            android:id="@+id/app_navigation_downloads_update"
+            android:icon="@android:drawable/ic_menu_upload"
+            android:orderInCategory="2"
+            android:title="@string/download_update"
+            app:showAsAction="ifRoom" />
+
+        <item
+            android:id="@+id/app_navigation_about"
+            android:icon="@android:drawable/ic_menu_info_details"
+            android:orderInCategory="2"
+            android:title="@string/about"
+            app:showAsAction="ifRoom" />
+    </group>
+    <group android:id="@+id/app_navigation_other">
+        <item
+            android:id="@+id/app_navigation_sign_out"
+            app:showAsAction="ifRoom"
+            android:icon="@android:drawable/ic_lock_idle_lock"
+            android:orderInCategory="2"
+            android:title="@string/exit"/>
+    </group>
+</menu>

@@ -4,4 +4,12 @@
     <string name="menu_add">Добавить</string>
     <string name="menu_clear">Очистить</string>
     <string name="action_search">Найти</string>
+
+    <string name="empty">-= =-</string>
+    <string name="sync">Синхронизация</string>
+    <string name="about">О разработчике</string>
+    <string name="download_update">Скачать обновление</string>
+    <string name="contact_with_author">Написать автору</string>
+    <string name="exit">Выйти</string>
+
 </resources>
