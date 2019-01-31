@@ -96,6 +96,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         navigation.setImageClickListener(this);
         navigation.setUserNameClickListener(this);
 
+        ScheduleRoutes dummy = findViewById(R.id.dummy);
+        if (dummy != null) {
+            dummy.setShowText(true);
+            dummy.setDescriptionText("План посещений");
+            dummy.setRoute("0100010");
+        }
+
         handler = new Handler();
     }
 

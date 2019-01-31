@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources>
+    <string-array name="days_of_weeks">
+        <item>@string/bt_monday</item>
+        <item>@string/bt_tuesday</item>
+        <item>@string/bt_wednesday</item>
+        <item>@string/bt_thursday</item>
+        <item>@string/bt_friday</item>
+        <item>@string/bt_saturday</item>
+        <item>@string/bt_sunday</item>
+    </string-array>
+</resources>
