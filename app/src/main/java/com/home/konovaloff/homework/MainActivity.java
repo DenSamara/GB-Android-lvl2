@@ -325,7 +325,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 LayoutInflater inflater = getLayoutInflater();
                 View v = inflater.inflate(R.layout.username, null);
                 final EditText editText = v.findViewById(R.id.username);
-                
+
                 new AlertDialog.Builder(this)
                         .setTitle("Представьтесь, пожалуйста")
                         .setView(v)
