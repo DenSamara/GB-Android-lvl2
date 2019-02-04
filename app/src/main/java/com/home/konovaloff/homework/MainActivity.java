@@ -32,18 +32,22 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.SearchView;
 import android.widget.Toast;
 
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, View.OnClickListener{
+public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, View.OnClickListener, IListener{
     public static final String COM_WHATSAPP = "com.whatsapp";
     public static final String DEFAULT_USERNAME = "Гость";
     public static final int IDD_SELECT_PHOTO = 1;
 
     private static final String TAG = MainActivity.class.getSimpleName();
+    private static final String KEY_TASK = "main.activity.dummytask";
 
     private boolean doubleBackPress;
     private Handler handler;
@@ -53,8 +57,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private ActionBarDrawerToggle drawerToggle;
     private ValueAnimator drawerToggleAnimator;
     private Toolbar toolbar;
+    private ProgressBar progressBar;
+    private DummyTask dummyTask;
 
-    private SensorManager sensorManager;
     private List<Sensor> sensors;
 
     private final View.OnClickListener navigationClickListener =
@@ -73,6 +78,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                             getSupportFragmentManager().getBackStackEntryCount() == 0);
                 }
             };
+
+    private void startDummyTask(){
+        showProgress(true);
+
+        dummyTask = new DummyTask();
+        dummyTask.setListener(this);
+        dummyTask.execute();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -102,6 +115,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         navigation.setImageClickListener(this);
         navigation.setUserNameClickListener(this);
 
+//        ScheduleRoutes dummy = new ScheduleRoutes(this);
         ScheduleRoutes dummy = findViewById(R.id.dummy);
         if (dummy != null) {
             dummy.setShowText(true);
@@ -109,10 +123,33 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             dummy.setRoute("0100010");
         }
 
-        sensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
-        sensors = sensorManager.getSensorList(Sensor.TYPE_ALL);
+        SensorManager sensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
+        if (sensorManager != null)
+            sensors = sensorManager.getSensorList(Sensor.TYPE_ALL);
 
         handler = new Handler();
+
+        if (savedInstanceState == null){
+            //Если мы тут в первый раз, запускаем процесс
+            startDummyTask();
+        }else {
+            //Проверяем, может есть запущенные задачи, для восстановления прогресса
+            restoreInstanceState();
+        }
+    }
+
+    private void restoreInstanceState() {
+        Object objCustomInstance = getLastCustomNonConfigurationInstance();
+        if (objCustomInstance != null && objCustomInstance instanceof java.util.Map) {
+            java.util.Map customInstance = (java.util.Map) objCustomInstance;
+
+            if (customInstance.containsKey(KEY_TASK)) {
+                showProgress(true);
+
+                dummyTask = (DummyTask)customInstance.get(KEY_TASK);
+                dummyTask.setListener(this);
+            }
+        }
     }
 
     private void bindContentView(@LayoutRes int layoutResId) {
@@ -120,6 +157,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         drawerLayout = findViewById(R.id.drawer_layout);
         toolbar = findViewById(R.id.toolbar);
+        progressBar = findViewById(R.id.app_progress_bar);
 
         navigation = (DrawerNavigation) getSupportFragmentManager()
                 .findFragmentById(R.id.drawer_navigation);
@@ -290,11 +328,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             return;
         }
 
-        //TODO Имя пользователя
-        String fio = "";
+        String fio = navigation.getUserName();
 
         String description;
-        if (fio != null && !fio.isEmpty()) {
+        if (fio != null && !fio.isEmpty() && !fio.equalsIgnoreCase(DEFAULT_USERNAME)) {
             description = String.format("Здравствуйте! Меня зовут %s. У меня есть вопрос пр приложению %s:\n", fio, MyApp.getName());
         } else
             description = String.format("Здравствуйте! У меня есть вопрос пр приложению %s:\n", MyApp.getName());
@@ -310,7 +347,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void startActionAbout() {
-        Global.toast(String.format("Автор: Коновалов Денис. Проект выполнен в качестве домашнего задания в рамках обучения программированию для платформы Android"));
+        Global.toast("Автор: Коновалов Денис. Проект выполнен в качестве домашнего задания в рамках обучения программированию для платформы Android");
     }
 
     /**
@@ -392,5 +429,53 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     break;
             }
         }
+    }
+
+    @Override
+    public void onTaskComplete(DummyTask dummyTask) {
+        boolean res;
+        try{
+            res = dummyTask.get();
+        }catch (Exception e){
+            res = false;
+        }
+
+        if (res){
+            Global.toast("Процесс успешно завершён");
+        }else {
+            Global.toast("Ошибка выполнения: "+dummyTask.getLastError());
+        }
+
+        showProgress(false);
+
+        //Возвращаем заголовок в исходное состояние
+        setTitle(MyApp.getName());
+    }
+
+    @Override
+    public void onProgressUpdate(String txt) {
+        //Статус прогресса будем показывать в заголовке
+        this.setTitle(txt);
+    }
+
+    private void showProgress(boolean value){
+        if (progressBar != null){
+            progressBar.setVisibility(value ? View.VISIBLE : View.INVISIBLE);
+        }
+    }
+
+    @Override
+    public Object onRetainCustomNonConfigurationInstance() {
+        Map<String, Object> customInstance = new HashMap<>();
+
+        //Отвязываемся от активности
+        if (dummyTask != null) {
+            dummyTask.setListener(null);
+            customInstance.put(KEY_TASK, dummyTask);
+            dummyTask = null;
+        }
+
+        return customInstance.isEmpty() ?
+                super.onRetainCustomNonConfigurationInstance() : customInstance;
     }
 }

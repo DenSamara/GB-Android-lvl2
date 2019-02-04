@@ -26,6 +26,7 @@
         </FrameLayout>
 
         <include layout="@layout/toolbar" />
+        <include layout="@layout/app_progress_bar" />
 
     </android.support.constraint.ConstraintLayout>
 

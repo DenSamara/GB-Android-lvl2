@@ -31,7 +31,7 @@ public final class DrawerNavigation extends Fragment{
 
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
-        navigationView = (NavigationView) view.findViewById(R.id.app_navigation);
+        navigationView = view.findViewById(R.id.app_navigation);
         navigationView.setNavigationItemSelectedListener(listener);
 
         View navigationHeader = navigationView.inflateHeaderView(R.layout.app_navigation_header);
@@ -64,6 +64,12 @@ public final class DrawerNavigation extends Fragment{
     public void setUserName(String userName){
         if (tvUserName != null)
             tvUserName.setText(userName);
+    }
+
+    public String getUserName(){
+        if (tvUserName == null) return null;
+
+        return  tvUserName.getText().toString();
     }
 
     public void setUserImage(Bitmap image){
