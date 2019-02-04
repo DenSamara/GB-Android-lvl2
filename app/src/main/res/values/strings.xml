@@ -5,6 +5,7 @@
     <string name="menu_clear">Очистить</string>
     <string name="action_search">Найти</string>
 
+    <string name="caption_meet">Представьтесь, пожалуйста</string>
     <string name="empty"> </string>
     <string name="sync">Список датчиков</string>
     <string name="about">О разработчике</string>
@@ -14,7 +15,9 @@
     <string name="username">Как вас зовут?</string>
     <string name="sensors_list">Список датчиков</string>
     <string name="success">Успешно завершено</string>
-    <string name="runtime_error">"Ошибка выполнения: "</string>
+    <string name="runtime_error">Ошибка выполнения: </string>
+    <string name="change">Изменить</string>
+    <string name="cancel">Отмена</string>
 
     <string name="btStartTask">Запустить AsyncTask</string>
     <string name="btStartService">Запустить IntentService</string>
