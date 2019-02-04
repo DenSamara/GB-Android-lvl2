@@ -9,6 +9,8 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.hardware.Sensor;
+import android.hardware.SensorManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -34,6 +36,7 @@ import android.widget.SearchView;
 import android.widget.Toast;
 
 import java.io.InputStream;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, View.OnClickListener{
     public static final String COM_WHATSAPP = "com.whatsapp";
@@ -50,6 +53,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private ActionBarDrawerToggle drawerToggle;
     private ValueAnimator drawerToggleAnimator;
     private Toolbar toolbar;
+
+    private SensorManager sensorManager;
+    private List<Sensor> sensors;
 
     private final View.OnClickListener navigationClickListener =
             new View.OnClickListener() {
@@ -95,6 +101,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         navigation.setUserName(DEFAULT_USERNAME);
         navigation.setImageClickListener(this);
         navigation.setUserNameClickListener(this);
+
+        ScheduleRoutes dummy = findViewById(R.id.dummy);
+        if (dummy != null) {
+            dummy.setShowText(true);
+            dummy.setDescriptionText("План посещений");
+            dummy.setRoute("0100010");
+        }
+
+        sensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
+        sensors = sensorManager.getSensorList(Sensor.TYPE_ALL);
 
         handler = new Handler();
     }
@@ -301,14 +317,28 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
      * Запускаем процесс обновления данных
      */
     private void startSynchronization() {
+        String[] array = new String[sensors.size()];
+        for (int i = 0; i < sensors.size();i++){
+            Sensor item = sensors.get(i);
+            array[i] = String.format("%s %s %s", item.getName(), item.getVendor(), item.getVersion());
+        }
 
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(R.string.sensors_list)
+                .setItems(array, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        Global.toast(sensors.get(which).toString());
+                    }
+                });
+        builder.create().show();
     }
 
     /**
      * Меняем логин и лого на дефолт
      */
     private void onSignOut() {
-
+        navigation.setUserName(DEFAULT_USERNAME);
+        navigation.setUserImage(getResources().getDrawable(android.R.drawable.btn_star_big_off));
     }
 
     @Override

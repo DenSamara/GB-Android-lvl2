@@ -1,6 +1,7 @@
 package com.home.konovaloff.homework;
 
 import android.graphics.Bitmap;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
@@ -70,4 +71,8 @@ public final class DrawerNavigation extends Fragment{
             imageView.setImageBitmap(image);
     }
 
+    public void setUserImage(Drawable image){
+        if (imageView != null)
+            imageView.setImageDrawable(image);
+    }
 }

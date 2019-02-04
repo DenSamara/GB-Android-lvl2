@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Этот файл определяет прямоугольник с закругленными углами. Элемент corners
+задает радиус закругления, а элементы gradient задают направление и начальный/
+конечный цвета градиента.
+Подробнее здесь: http://developer.android.com/guide/topics/resources/
+drawable-resource.html
+ -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle" >
+
+    <corners android:radius="3dp" />
+
+    <gradient
+        android:angle="90"
+        android:endColor="#454545"
+        android:startColor="#acacac" />
+
+</shape>

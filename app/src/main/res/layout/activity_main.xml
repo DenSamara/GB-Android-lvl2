@@ -7,16 +7,25 @@
 
     <android.support.constraint.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        >
+        android:layout_height="match_parent">
 
         <FrameLayout
             android:id="@+id/container"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_marginTop="?actionBarSize" />
+            android:layout_marginTop="?actionBarSize">
 
-        <include layout="@layout/toolbar"/>
+            <com.home.konovaloff.homework.ScheduleRoutes
+                android:id="@+id/dummy"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                >
+
+            </com.home.konovaloff.homework.ScheduleRoutes>
+        </FrameLayout>
+
+        <include layout="@layout/toolbar" />
 
     </android.support.constraint.ConstraintLayout>
 
@@ -25,7 +34,7 @@
         android:name="com.home.konovaloff.homework.DrawerNavigation"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        tools:layout="@layout/app_navigation"
-        android:layout_gravity="start" />
+        android:layout_gravity="start"
+        tools:layout="@layout/app_navigation" />
 
 </android.support.v4.widget.DrawerLayout>
