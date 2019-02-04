@@ -13,6 +13,11 @@
     <string name="exit">Выйти</string>
     <string name="username">Как вас зовут?</string>
     <string name="sensors_list">Список датчиков</string>
+    <string name="success">Успешно завершено</string>
+    <string name="runtime_error">"Ошибка выполнения: "</string>
+
+    <string name="btStartTask">Запустить AsyncTask</string>
+    <string name="btStartService">Запустить IntentService</string>
 
     <string name="bt_monday">ПН</string>
     <string name="bt_tuesday">ВТ</string>

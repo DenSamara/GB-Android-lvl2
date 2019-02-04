@@ -1,8 +1,10 @@
-package com.home.konovaloff.homework;
+package com.home.konovaloff.homework.global;
 
 import android.content.Context;
 import android.util.Log;
 import android.widget.Toast;
+
+import com.home.konovaloff.homework.MyApp;
 
 public class Global {
     private final static boolean showDebugInfo = true;

@@ -15,14 +15,31 @@
             android:layout_height="match_parent"
             android:layout_marginTop="?actionBarSize">
 
-            <com.home.konovaloff.homework.ScheduleRoutes
-                android:id="@+id/dummy"
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical"
+                android:layout_height="match_parent"
+                android:orientation="vertical"
+                android:layout_margin="20dp"
                 >
 
-            </com.home.konovaloff.homework.ScheduleRoutes>
+                <Button
+                    android:id="@+id/btStartTask"
+                    android:layout_height="0dp"
+                    android:layout_width="match_parent"
+                    android:text="@string/btStartTask"
+                    style="@style/MyButton"
+                    android:layout_weight="1"
+                    />
+
+                <Button
+                    android:id="@+id/btStartService"
+                    android:layout_height="0dp"
+                    android:layout_width="match_parent"
+                    android:text="@string/btStartService"
+                    style="@style/MyButton"
+                    android:layout_weight="1"/>
+            </LinearLayout>
+
         </FrameLayout>
 
         <include layout="@layout/toolbar" />

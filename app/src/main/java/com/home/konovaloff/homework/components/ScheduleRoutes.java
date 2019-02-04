@@ -1,4 +1,4 @@
-package com.home.konovaloff.homework;
+package com.home.konovaloff.homework.components;
 
 import android.content.Context;
 import android.graphics.Canvas;
@@ -8,6 +8,8 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
+
+import com.home.konovaloff.homework.R;
 
 public class ScheduleRoutes extends LinearLayout {
 

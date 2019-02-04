@@ -2,9 +2,14 @@ package com.home.konovaloff.homework;
 
 import android.animation.Animator;
 import android.animation.ValueAnimator;
+import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.IntentService;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -14,6 +19,7 @@ import android.hardware.SensorManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -31,17 +37,26 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.SearchView;
+import android.widget.TextView;
 import android.widget.Toast;
+
+import com.home.konovaloff.homework.global.Global;
+import com.home.konovaloff.homework.interfaces.IListener;
+import com.home.konovaloff.homework.tasks.DummyIntentService;
+import com.home.konovaloff.homework.tasks.DummyTask;
 
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, View.OnClickListener, IListener{
+import static com.home.konovaloff.homework.tasks.DummyIntentService.*;
+
+public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, View.OnClickListener, IListener {
     public static final String COM_WHATSAPP = "com.whatsapp";
     public static final String DEFAULT_USERNAME = "Гость";
     public static final int IDD_SELECT_PHOTO = 1;
@@ -49,18 +64,26 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private static final String TAG = MainActivity.class.getSimpleName();
     private static final String KEY_TASK = "main.activity.dummytask";
 
-    private boolean doubleBackPress;
-    private Handler handler;
-
     private DrawerLayout drawerLayout;
     private DrawerNavigation navigation;
     private ActionBarDrawerToggle drawerToggle;
     private ValueAnimator drawerToggleAnimator;
     private Toolbar toolbar;
-    private ProgressBar progressBar;
-    private DummyTask dummyTask;
 
+    private boolean doubleBackPress;
+    private Handler handler;
+
+    //Lesson 2
     private List<Sensor> sensors;
+
+    //lesson 3
+    private ProgressBar progressBar;
+    private Button btStartTask;
+    private Button btStartService;
+
+    private DummyTask dummyTask;
+    private DummyIntentService dummyIntentService;
+    private BroadcastReceiver receiver;
 
     private final View.OnClickListener navigationClickListener =
             new View.OnClickListener() {
@@ -78,14 +101,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                             getSupportFragmentManager().getBackStackEntryCount() == 0);
                 }
             };
-
-    private void startDummyTask(){
-        showProgress(true);
-
-        dummyTask = new DummyTask();
-        dummyTask.setListener(this);
-        dummyTask.execute();
-    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -115,26 +130,59 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         navigation.setImageClickListener(this);
         navigation.setUserNameClickListener(this);
 
-//        ScheduleRoutes dummy = new ScheduleRoutes(this);
-        ScheduleRoutes dummy = findViewById(R.id.dummy);
-        if (dummy != null) {
-            dummy.setShowText(true);
-            dummy.setDescriptionText("План посещений");
-            dummy.setRoute("0100010");
-        }
-
         SensorManager sensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
         if (sensorManager != null)
             sensors = sensorManager.getSensorList(Sensor.TYPE_ALL);
 
         handler = new Handler();
 
+        setupButtons();
+
+        setupReceiver();
+
         if (savedInstanceState == null){
-            //Если мы тут в первый раз, запускаем процесс
-            startDummyTask();
+            //Если мы тут в первый раз
         }else {
             //Проверяем, может есть запущенные задачи, для восстановления прогресса
             restoreInstanceState();
+        }
+    }
+
+    /**
+     * Настраиваем ресивер для службы
+     */
+    private void setupReceiver() {
+        receiver = new BroadcastReceiver(){
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                byte status = intent.getByteExtra(EXTRA_RESULT, (byte)0);
+                String resText = getString(R.string.empty);
+                switch (status) {
+                    case RESULT_SUCCESS:
+                        resText = getString(R.string.success);
+                        break;
+                    case RESULT_ERROR:
+                        resText = intent.getStringExtra(EXTRA_MESSAGE);
+                        break;
+                    default:
+                        break;
+                }
+
+                Global.toast(resText);
+                enableButton(btStartService, true);
+            }
+        };
+    }
+
+    private void setupButtons() {
+        btStartTask = findViewById(R.id.btStartTask);
+        if (btStartTask != null){
+            btStartTask.setOnClickListener(this);
+        }
+
+        btStartService = findViewById(R.id.btStartService);
+        if (btStartService != null){
+            btStartService.setOnClickListener(this);
         }
     }
 
@@ -148,6 +196,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
                 dummyTask = (DummyTask)customInstance.get(KEY_TASK);
                 dummyTask.setListener(this);
+
+                enableButton(btStartTask, false);
             }
         }
     }
@@ -409,6 +459,39 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                         })
                         .show();
                 break;
+
+            case R.id.btStartTask:
+                startDummyTask();
+                break;
+            case R.id.btStartService:
+                startDummyService(10);
+                break;
+        }
+    }
+
+    private void startDummyService(int repeatCount) {
+        enableButton(btStartService, false);
+        showProgress(true);
+
+        Intent dummyIS = new Intent(this, DummyIntentService.class);
+        dummyIS.putExtra(EXTRA_REPEAT_COUNT, repeatCount);
+
+        startService(dummyIS);
+    }
+
+    private void startDummyTask(){
+        enableButton(btStartTask, false);
+
+        showProgress(true);
+
+        dummyTask = new DummyTask();
+        dummyTask.setListener(this);
+        dummyTask.execute();
+    }
+
+    private void enableButton(Button button, boolean value){
+        if (button != null){
+            button.setEnabled(false);
         }
     }
 
@@ -441,13 +524,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
 
         if (res){
-            Global.toast("Процесс успешно завершён");
+            Global.toast(getString(R.string.success));
         }else {
-            Global.toast("Ошибка выполнения: "+dummyTask.getLastError());
+            Global.toast(getString(R.string.runtime_error)+dummyTask.getLastError());
         }
 
         showProgress(false);
-
+        enableButton(btStartTask, true);
         //Возвращаем заголовок в исходное состояние
         setTitle(MyApp.getName());
     }

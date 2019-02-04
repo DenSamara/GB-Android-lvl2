@@ -1,6 +1,8 @@
-package com.home.konovaloff.homework;
+package com.home.konovaloff.homework.tasks;
 
 import android.os.AsyncTask;
+
+import com.home.konovaloff.homework.interfaces.IListener;
 
 public class DummyTask extends AsyncTask <Object, String, Boolean>{
     private static final String TAG = DummyTask.class.getSimpleName();
@@ -41,7 +43,7 @@ public class DummyTask extends AsyncTask <Object, String, Boolean>{
 
         try {
             for (int i = 0; i < MAX_ITERATION; i++){
-                publishProgress(String.format("Выполнено: %s%%", Integer.toString(i)));
+                publishProgress(String.format("Выполнено: %s%%", Integer.toString(i*10)));
                 Thread.sleep(DELAY_IN_MS);
             }
         }catch (Exception e){
