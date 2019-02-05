@@ -3,6 +3,7 @@
 
     <!-- DEFAULTS-->
     <string name="default_username">Гость</string>
+    <string name="default_site">ya.ru</string>
 
     <!-- MENU -->
     <string name="menu_add">Добавить</string>

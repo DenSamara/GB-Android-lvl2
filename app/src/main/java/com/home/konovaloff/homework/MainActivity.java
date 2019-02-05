@@ -28,14 +28,18 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.Editable;
 import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
+import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.SearchView;
 import android.widget.Toast;
@@ -83,12 +87,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     //lesson 3
     private ProgressBar progressBar;
-    private Button btStartTask;
-    private Button btStartService;
 
     private DummyTask dummyTask;
     private BroadcastReceiver receiver;
     private byte service_is_in_progress;
+
+    //lesson 4
+    private ImageButton btOK;
+    private EditText etAddress;
+    private WebView wvContent;
+    private OkHttpRequester requestMaker;
 
     private final View.OnClickListener navigationClickListener =
             new View.OnClickListener() {
@@ -140,12 +148,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         navigation.setImageClickListener(this);
         navigation.setUserNameClickListener(this);
 
-
         SensorManager sensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
         if (sensorManager != null)
             sensors = sensorManager.getSensorList(Sensor.TYPE_ALL);
 
         handler = new Handler();
+
+        setupBrowser();
 
         setupReceiver();
 
@@ -155,6 +164,33 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             //Проверяем, может есть запущенные задачи, для восстановления прогресса
             restoreInstanceState();
         }
+    }
+
+    private void setupBrowser() {
+        etAddress = findViewById(R.id.etURL);
+        if (etAddress != null){
+            etAddress.setText(getString(R.string.default_site));
+        }
+
+        btOK = findViewById(R.id.btOK);
+        if (btOK != null)
+            btOK.setOnClickListener(this);
+
+        wvContent = findViewById(R.id.wvContent);
+        if (wvContent != null){
+            wvContent.getSettings().setBuiltInZoomControls(true);
+            wvContent.getSettings().setSupportZoom(true);
+            wvContent.getSettings().setLoadWithOverviewMode(true);
+            wvContent.getSettings().setJavaScriptEnabled(true);
+        }
+        requestMaker = new OkHttpRequester(new OkHttpRequester.OnResponseCompleted() {
+            @Override
+            public void onCompleted(String content) {
+                if (wvContent != null)
+                    wvContent.loadData(content, "text/html; charset=utf-8" , "utf-8");
+            }
+        });
+        requestMaker.run(getString(R.string.default_site));
     }
 
     private void setAvatar(Uri path) {
@@ -192,7 +228,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
                 Global.toast(resText);
                 showProgress(false);
-                enableButton(btStartService, true);
+//                enableButton(btStartService, true);
             }
         };
 
@@ -449,11 +485,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                         })
                         .show();
                 break;
+            case R.id.btOK:
+                if (etAddress != null && requestMaker != null)
+                    requestMaker.run(etAddress.getText().toString());
+                break;
         }
     }
 
     private void startDummyService(int repeatCount) {
-        enableButton(btStartService, false);
+//        enableButton(btStartService, false);
         showProgress(true);
 
         Intent dummyIS = new Intent(this, DummyIntentService.class);
@@ -464,7 +504,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void startDummyTask(){
-        enableButton(btStartTask, false);
+//        enableButton(btStartTask, false);
 
         showProgress(true);
 
@@ -517,7 +557,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         this.dummyTask = null;
 
         showProgress(false);
-        enableButton(btStartTask, true);
+//        enableButton(btStartTask, true);
         //Возвращаем заголовок в исходное состояние
         setTitle(MyApp.getName());
     }
@@ -545,14 +585,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 dummyTask = (DummyTask)customInstance.get(KEY_TASK);
                 dummyTask.setListener(this);
 
-                enableButton(btStartTask, false);
+//                enableButton(btStartTask, false);
             }
 
             if (customInstance.containsKey(KEY_SERVICE)) {
                 service_is_in_progress = SERVICE_RUNNING;
                 showProgress(true);
 
-                enableButton(btStartService, false);
+//                enableButton(btStartService, false);
             }
         }
     }
