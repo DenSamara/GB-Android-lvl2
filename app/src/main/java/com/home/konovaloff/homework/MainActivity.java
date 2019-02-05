@@ -5,7 +5,7 @@ import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageInfo;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -26,6 +26,7 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -35,12 +36,18 @@ import android.widget.EditText;
 import android.widget.SearchView;
 import android.widget.Toast;
 
+import com.home.konovaloff.homework.global.Global;
+import com.home.konovaloff.homework.global.Preferences;
+import com.home.konovaloff.homework.interfaces.IListener;
+import com.home.konovaloff.homework.tasks.DummyIntentService;
+import com.home.konovaloff.homework.tasks.DummyTask;
+
 import java.io.InputStream;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, View.OnClickListener{
     public static final String COM_WHATSAPP = "com.whatsapp";
-    public static final String DEFAULT_USERNAME = "Гость";
+//    public static final String DEFAULT_USERNAME = "Guest";
     public static final int IDD_SELECT_PHOTO = 1;
 
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -98,22 +105,88 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         setDrawerToggleEnable(getSupportFragmentManager().getBackStackEntryCount() == 0);
 
         navigation.setNavigationItemSelectedListener(this);
-        navigation.setUserName(DEFAULT_USERNAME);
+        navigation.setUserName(Preferences.loadStringPreference(this, getString(R.string.pref_username), getString(R.string.default_username)));
+        String avatarPathString = Preferences.loadStringPreference(this, getString(R.string.pref_ava_path), getString(R.string.empty));
+        if (!TextUtils.isEmpty(avatarPathString)){
+            setAvatar(Uri.parse(avatarPathString));
+        }
+
         navigation.setImageClickListener(this);
         navigation.setUserNameClickListener(this);
 
-        ScheduleRoutes dummy = findViewById(R.id.dummy);
-        if (dummy != null) {
-            dummy.setShowText(true);
-            dummy.setDescriptionText("План посещений");
-            dummy.setRoute("0100010");
-        }
 
-        sensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
-        sensors = sensorManager.getSensorList(Sensor.TYPE_ALL);
+        SensorManager sensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
+        if (sensorManager != null)
+            sensors = sensorManager.getSensorList(Sensor.TYPE_ALL);
 
         handler = new Handler();
+
+        setupButtons();
+
+        setupReceiver();
+
+        if (savedInstanceState == null){
+            //Если мы тут в первый раз
+        }else {
+            //Проверяем, может есть запущенные задачи, для восстановления прогресса
+            restoreInstanceState();
+        }
     }
+
+    private void setAvatar(Uri path) {
+        try{
+            InputStream inputStream = getContentResolver().openInputStream(path);
+            Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
+
+            navigation.setUserImage(bitmap);
+        }catch (Exception e){
+            Global.log_e(TAG, e.toString());
+        }
+    }
+
+    /**
+     * Настраиваем ресивер для службы
+     */
+    private void setupReceiver() {
+        receiver = new BroadcastReceiver(){
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                service_is_in_progress = SERVICE_STOPPED;
+
+                byte status = intent.getByteExtra(EXTRA_RESULT, (byte)0);
+                String resText = getString(R.string.empty);
+                switch (status) {
+                    case RESULT_SUCCESS:
+                        resText = getString(R.string.success);
+                        break;
+                    case RESULT_ERROR:
+                        resText = intent.getStringExtra(EXTRA_MESSAGE);
+                        break;
+                    default:
+                        break;
+                }
+
+                Global.toast(resText);
+                showProgress(false);
+                enableButton(btStartService, true);
+            }
+        };
+
+        registerReceiver(receiver, new IntentFilter(DummyIntentService.INTENT_FILTER));
+    }
+
+    private void setupButtons() {
+        btStartTask = findViewById(R.id.btStartTask);
+        if (btStartTask != null){
+            btStartTask.setOnClickListener(this);
+        }
+
+        btStartService = findViewById(R.id.btStartService);
+        if (btStartService != null){
+            btStartService.setOnClickListener(this);
+
+        }
+	}
 
     private void bindContentView(@LayoutRes int layoutResId) {
         setContentView(layoutResId);
@@ -283,10 +356,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private void startActionWhatsApp() {
         try {
             PackageManager pm = getPackageManager();
-            PackageInfo info = pm.getPackageInfo(COM_WHATSAPP, PackageManager.GET_META_DATA);
-
+            pm.getPackageInfo(COM_WHATSAPP, PackageManager.GET_META_DATA);//PackageInfo info =
         } catch (PackageManager.NameNotFoundException e) {
-            Global.toast("WhatsApp не установлен");
+            Global.toast(getString(R.string.err_whatsapp_is_not_installed));
             return;
         }
 
@@ -294,10 +366,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         String fio = "";
 
         String description;
-        if (fio != null && !fio.isEmpty()) {
-            description = String.format("Здравствуйте! Меня зовут %s. У меня есть вопрос пр приложению %s:\n", fio, MyApp.getName());
+		if (fio != null && !fio.isEmpty() && !fio.equalsIgnoreCase(getString(R.string.default_username))) {
+            description = String.format(getString(R.string.whatsapp_with_username), fio, MyApp.getName());
         } else
-            description = String.format("Здравствуйте! У меня есть вопрос пр приложению %s:\n", MyApp.getName());
+            description = String.format("%s %s:\n", getString(R.string.whatsapp_default), MyApp.getName());
 
         Intent sendIntent = new Intent("android.intent.action.MAIN");
 //        sendIntent.putExtra("jid", number + "@s.whatsapp.net"); // Для получения текущего номера нужны дополнительные привилегии
@@ -310,7 +382,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void startActionAbout() {
-        Global.toast(String.format("Автор: Коновалов Денис. Проект выполнен в качестве домашнего задания в рамках обучения программированию для платформы Android"));
+		Global.toast(getString(R.string.about_item_text));
     }
 
     /**
@@ -337,7 +409,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
      * Меняем логин и лого на дефолт
      */
     private void onSignOut() {
-        navigation.setUserName(DEFAULT_USERNAME);
+        navigation.setUserName(getString(R.string.default_username));
         navigation.setUserImage(getResources().getDrawable(android.R.drawable.btn_star_big_off));
     }
 
@@ -361,8 +433,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                         .setView(v)
                         .setPositiveButton("Изменить", new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int whichButton) {
-                                if (editText != null)
+                                if (editText != null) {
+                                    Preferences.saveStringPreference(MainActivity.this, getString(R.string.pref_username), editText.getText().toString());
                                     navigation.setUserName(editText.getText().toString());
+                                }
                             }
                         })
                         .setNegativeButton("Отмена", new DialogInterface.OnClickListener() {
@@ -382,10 +456,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 case IDD_SELECT_PHOTO:
                     try{
                         Uri path = data.getData();
-                        InputStream inputStream = getContentResolver().openInputStream(path);
-                        Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
 
-                        navigation.setUserImage(bitmap);
+                        Preferences.saveStringPreference(this, getString(R.string.pref_ava_path), path.toString());
+
+                        setAvatar(path);
                     }catch (Exception e){
                         Global.log_e(TAG, e.toString());
                     }
@@ -393,4 +467,70 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             }
         }
     }
+
+    @Override
+    public void onTaskComplete(DummyTask task) {
+        boolean res;
+        try{
+            res = task.get();
+        }catch (Exception e){
+            res = false;
+        }
+
+        if (res){
+            Global.toast(getString(R.string.success));
+        }else {
+            Global.toast(getString(R.string.err_runtime)+task.getLastError());
+        }
+
+        this.dummyTask.setListener(null);
+        this.dummyTask = null;
+
+        showProgress(false);
+        enableButton(btStartTask, true);
+        //Возвращаем заголовок в исходное состояние
+        setTitle(MyApp.getName());
+    }
+
+    @Override
+    public void onProgressUpdate(String txt) {
+        //Статус прогресса будем показывать в заголовке
+        this.setTitle(txt);
+    }
+
+    private void showProgress(boolean value){
+        if (progressBar != null){
+            progressBar.setVisibility(value ? View.VISIBLE : View.INVISIBLE);
+        }
+    }
+
+    @Override
+    public Object onRetainCustomNonConfigurationInstance() {
+        Map<String, Object> customInstance = new HashMap<>();
+
+        //Отвязываемся от активности
+        if (dummyTask != null) {
+            dummyTask.setListener(null);
+            customInstance.put(KEY_TASK, dummyTask);
+            dummyTask = null;
+        }
+
+        if (service_is_in_progress == SERVICE_RUNNING){
+            customInstance.put(KEY_SERVICE, service_is_in_progress);
+        }
+
+        return customInstance.isEmpty() ?
+                super.onRetainCustomNonConfigurationInstance() : customInstance;
+    }
+
+    @Override
+    protected void onDestroy() {
+        try{
+            unregisterReceiver(receiver);
+        }catch (Exception e){
+            Global.log_e(TAG, e.toString());
+        }
+        super.onDestroy();
+    }
+
 }

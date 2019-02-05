@@ -1,18 +1,27 @@
 <resources>
     <string name="app_name">HomeWork</string>
 
+    <!-- DEFAULTS-->
+    <string name="default_username">Гость</string>
+
+    <!-- MENU -->
     <string name="menu_add">Добавить</string>
     <string name="menu_clear">Очистить</string>
     <string name="action_search">Найти</string>
 
-    <string name="empty"></string>
-    <string name="sync">Список датчиков</string>
-    <string name="about">О разработчике</string>
+    <!-- NAVIGATION -->
+    <string name="sync">Синхронизировать</string>
     <string name="download_update">Скачать обновление</string>
     <string name="contact_with_author">Написать автору</string>
+    <string name="about">О разработчике</string>
     <string name="exit">Выйти</string>
-    <string name="username">Как вас зовут?</string>
-    <string name="sensors_list">Список датчиков</string>
+
+    <!-- CAPTIONS -->
+    <string name="caption_meet">Представьтесь, пожалуйста</string>
+
+    <!-- BUTTONS -->
+    <string name="btStartTask">Запустить AsyncTask</string>
+    <string name="btStartService">Запустить IntentService</string>
 
     <string name="bt_monday">ПН</string>
     <string name="bt_tuesday">ВТ</string>
@@ -22,4 +31,28 @@
     <string name="bt_saturday">СБ</string>
     <string name="bt_sunday">ВС</string>
 
+    <!-- ERRORS -->
+    <string name="err_whatsapp_is_not_installed">WhatsApp не установлен</string>
+    <string name="err_runtime">Ошибка выполнения: </string>
+
+    <!-- COMMON -->
+    <string name="empty"> </string>
+    <string name="sensors_list">Список датчиков</string>
+    <string name="success">Успешно завершено</string>
+    <string name="username">Как вас зовут?</string>
+    <string name="change">Изменить</string>
+    <string name="cancel">Отмена</string>
+    <string name="prepare">Подготовка</string>
+    <string name="done">Выполнено</string>
+
+    <!-- PREFERENCES -->
+    <string name="pref_ava_path">preference_avatar</string>
+    <string name="pref_username">preference_username</string>
+
+    <!-- WHATSAPP -->
+    <string name="whatsapp_with_username">Здравствуйте! Меня зовут %s. У меня есть вопрос по приложению %s:</string>
+    <string name="whatsapp_default">Здравствуйте! У меня есть вопрос по приложению</string>
+
+    <!-- TEXT -->
+    <string name="about_item_text">Автор: Коновалов Денис. Проект выполнен в качестве домашнего задания в рамках обучения программированию для платформы Android</string>
 </resources>
