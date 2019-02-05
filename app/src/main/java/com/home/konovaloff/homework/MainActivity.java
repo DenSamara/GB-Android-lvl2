@@ -40,9 +40,11 @@ import android.widget.ProgressBar;
 import android.widget.SearchView;
 import android.widget.Toast;
 
+
 import com.home.konovaloff.homework.global.Global;
 import com.home.konovaloff.homework.interfaces.IListener;
 import com.home.konovaloff.homework.tasks.DummyIntentService;
+import com.home.konovaloff.homework.global.Preferences;
 import com.home.konovaloff.homework.tasks.DummyTask;
 
 import java.io.InputStream;
@@ -61,7 +63,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     public static final byte SERVICE_RUNNING = Byte.MIN_VALUE;
 
     public static final String COM_WHATSAPP = "com.whatsapp";
-    public static final String DEFAULT_USERNAME = "Гость";
+    //public static final String DEFAULT_USERNAME = "Гость";
     public static final int IDD_SELECT_PHOTO = 1;
 
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -130,7 +132,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         setDrawerToggleEnable(getSupportFragmentManager().getBackStackEntryCount() == 0);
 
         navigation.setNavigationItemSelectedListener(this);
-        navigation.setUserName(DEFAULT_USERNAME);
+        navigation.setUserName(getString(R.String.default_username));
         navigation.setImageClickListener(this);
         navigation.setUserNameClickListener(this);
 
