@@ -3,6 +3,7 @@
 
     <!-- DEFAULTS-->
     <string name="default_username">Гость</string>
+    <string name="default_site">ya.ru</string>
 
     <!-- MENU -->
     <string name="menu_add">Добавить</string>
@@ -55,4 +56,5 @@
 
     <!-- TEXT -->
     <string name="about_item_text">Автор: Коновалов Денис. Проект выполнен в качестве домашнего задания в рамках обучения программированию для платформы Android</string>
+    <string name="hint_input_address">Введите адрес: https://</string>
 </resources>
