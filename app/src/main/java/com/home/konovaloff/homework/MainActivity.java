@@ -147,8 +147,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         handler = new Handler();
 
-        setupButtons();
-
         setupReceiver();
 
         if (savedInstanceState == null){
@@ -201,19 +199,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         registerReceiver(receiver, new IntentFilter(DummyIntentService.INTENT_FILTER));
     }
 
-    private void setupButtons() {
-        btStartTask = findViewById(R.id.btStartTask);
-        if (btStartTask != null){
-            btStartTask.setOnClickListener(this);
-        }
-
-        btStartService = findViewById(R.id.btStartService);
-        if (btStartService != null){
-            btStartService.setOnClickListener(this);
-
-        }
-	}
-
     private void bindContentView(@LayoutRes int layoutResId) {
         setContentView(layoutResId);
 
@@ -254,12 +239,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     public boolean onOptionsItemSelected(MenuItem item) {
         boolean res;
         switch (item.getItemId()){
-            case R.id.menu_add:
-                addItem();
+            case R.id.menu_startTask:
+                startDummyTask();
                 res = true;
                 break;
-            case R.id.menu_clear:
-                clear();
+            case R.id.menu_startService:
+                startDummyService(5);
                 res = true;
                 break;
             default:
@@ -267,14 +252,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 break;
         }
         return res;
-    }
-
-    private void clear() {
-        Global.toast("Очищаем элементы");
-    }
-
-    private void addItem() {
-        Global.toast("Добавляем элемент");
     }
 
     @Override
@@ -472,13 +449,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                         })
                         .show();
                 break;
-
-            case R.id.btStartTask:
-                startDummyTask();
-                break;
-            case R.id.btStartService:
-                startDummyService(10);
-                break;
         }
     }
 
@@ -561,6 +531,29 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private void showProgress(boolean value){
         if (progressBar != null){
             progressBar.setVisibility(value ? View.VISIBLE : View.INVISIBLE);
+        }
+    }
+
+    private void restoreInstanceState() {
+        Object objCustomInstance = getLastCustomNonConfigurationInstance();
+        if (objCustomInstance != null && objCustomInstance instanceof java.util.Map) {
+            java.util.Map customInstance = (java.util.Map) objCustomInstance;
+
+            if (customInstance.containsKey(KEY_TASK)) {
+                showProgress(true);
+
+                dummyTask = (DummyTask)customInstance.get(KEY_TASK);
+                dummyTask.setListener(this);
+
+                enableButton(btStartTask, false);
+            }
+
+            if (customInstance.containsKey(KEY_SERVICE)) {
+                service_is_in_progress = SERVICE_RUNNING;
+                showProgress(true);
+
+                enableButton(btStartService, false);
+            }
         }
     }
 
