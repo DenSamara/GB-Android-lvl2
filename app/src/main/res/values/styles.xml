@@ -10,13 +10,6 @@
 
     </style>
 
-    <!-- TODO: Разделить по версиям API -->
-    <style name="Base.AppTheme.Widget.ActionBar" parent="ThemeOverlay.AppCompat.Dark.ActionBar">
-        <item name="android:actionModeBackground">@color/colorPrimary</item>
-        <item name="android:actionModeSplitBackground">@color/colorPrimaryDark</item>
-
-    </style>
-
     <!-- Элемент для отрисовки дней посещения ========================================================-->
     <style name="MyButton">
         <item name="android:layout_width">0dp</item>

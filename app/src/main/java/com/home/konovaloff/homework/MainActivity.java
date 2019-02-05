@@ -3,6 +3,8 @@ package com.home.konovaloff.homework;
 import android.animation.Animator;
 import android.animation.ValueAnimator;
 import android.app.Activity;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -32,7 +34,9 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
+import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.SearchView;
 import android.widget.Toast;
 
@@ -43,17 +47,27 @@ import com.home.konovaloff.homework.tasks.DummyIntentService;
 import com.home.konovaloff.homework.tasks.DummyTask;
 
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, View.OnClickListener{
+import static com.home.konovaloff.homework.tasks.DummyIntentService.EXTRA_MESSAGE;
+import static com.home.konovaloff.homework.tasks.DummyIntentService.EXTRA_REPEAT_COUNT;
+import static com.home.konovaloff.homework.tasks.DummyIntentService.EXTRA_RESULT;
+import static com.home.konovaloff.homework.tasks.DummyIntentService.RESULT_ERROR;
+import static com.home.konovaloff.homework.tasks.DummyIntentService.RESULT_SUCCESS;
+
+public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, View.OnClickListener, IListener {
+    public static final byte SERVICE_STOPPED = Byte.MAX_VALUE;
+    public static final byte SERVICE_RUNNING = Byte.MIN_VALUE;
+
     public static final String COM_WHATSAPP = "com.whatsapp";
 //    public static final String DEFAULT_USERNAME = "Guest";
     public static final int IDD_SELECT_PHOTO = 1;
 
     private static final String TAG = MainActivity.class.getSimpleName();
-
-    private boolean doubleBackPress;
-    private Handler handler;
+    private static final String KEY_TASK = "main.activity.dummytask";
+    private static final String KEY_SERVICE = "main.activity.dummyservice";
 
     private DrawerLayout drawerLayout;
     private DrawerNavigation navigation;
@@ -61,8 +75,20 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private ValueAnimator drawerToggleAnimator;
     private Toolbar toolbar;
 
-    private SensorManager sensorManager;
+    private boolean doubleBackPress;
+    private Handler handler;
+
+    //Lesson 2
     private List<Sensor> sensors;
+
+    //lesson 3
+    private ProgressBar progressBar;
+    private Button btStartTask;
+    private Button btStartService;
+
+    private DummyTask dummyTask;
+    private BroadcastReceiver receiver;
+    private byte service_is_in_progress;
 
     private final View.OnClickListener navigationClickListener =
             new View.OnClickListener() {
@@ -193,6 +219,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         drawerLayout = findViewById(R.id.drawer_layout);
         toolbar = findViewById(R.id.toolbar);
+        progressBar = findViewById(R.id.app_progress_bar);
 
         navigation = (DrawerNavigation) getSupportFragmentManager()
                 .findFragmentById(R.id.drawer_navigation);
@@ -362,8 +389,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             return;
         }
 
-        //TODO Имя пользователя
-        String fio = "";
+        String fio = navigation.getUserName();
 
         String description;
 		if (fio != null && !fio.isEmpty() && !fio.equalsIgnoreCase(getString(R.string.default_username))) {
@@ -429,9 +455,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 final EditText editText = v.findViewById(R.id.username);
 
                 new AlertDialog.Builder(this)
-                        .setTitle("Представьтесь, пожалуйста")
+                        .setTitle(R.string.caption_meet)
                         .setView(v)
-                        .setPositiveButton("Изменить", new DialogInterface.OnClickListener() {
+                        .setPositiveButton(getString(R.string.change), new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int whichButton) {
                                 if (editText != null) {
                                     Preferences.saveStringPreference(MainActivity.this, getString(R.string.pref_username), editText.getText().toString());
@@ -439,13 +465,47 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                                 }
                             }
                         })
-                        .setNegativeButton("Отмена", new DialogInterface.OnClickListener() {
+                        .setNegativeButton(getString(R.string.cancel), new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int whichButton) {
                                 dialog.dismiss();
                             }
                         })
                         .show();
                 break;
+
+            case R.id.btStartTask:
+                startDummyTask();
+                break;
+            case R.id.btStartService:
+                startDummyService(10);
+                break;
+        }
+    }
+
+    private void startDummyService(int repeatCount) {
+        enableButton(btStartService, false);
+        showProgress(true);
+
+        Intent dummyIS = new Intent(this, DummyIntentService.class);
+        dummyIS.putExtra(EXTRA_REPEAT_COUNT, repeatCount);
+
+        startService(dummyIS);
+        service_is_in_progress = SERVICE_RUNNING;
+    }
+
+    private void startDummyTask(){
+        enableButton(btStartTask, false);
+
+        showProgress(true);
+
+        dummyTask = new DummyTask();
+        dummyTask.setListener(this);
+        dummyTask.execute();
+    }
+
+    private void enableButton(Button button, boolean value){
+        if (button != null){
+            button.setEnabled(value);
         }
     }
 
