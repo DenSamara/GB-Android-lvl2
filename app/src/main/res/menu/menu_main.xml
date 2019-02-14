@@ -9,11 +9,9 @@
         app:actionViewClass = "android.widget.SearchView"
         android:title = "@string/action_search" />
     <item
-        android:id = "@+id/menu_startTask"
-        android:icon = "@android:drawable/ic_menu_add"
-        android:title = "@string/btStartTask" />
-    <item
-        android:id = "@+id/menu_startService"
-        android:title = "@string/btStartService"
+        android:id = "@+id/menu_refresh"
+        android:icon = "@android:drawable/ic_menu_rotate"
+        android:title = "@string/menu_refresh"
+        app:showAsAction = "ifRoom|collapseActionView"
         />
 </menu>

@@ -3,16 +3,11 @@ package com.home.konovaloff.homework;
 import android.animation.Animator;
 import android.animation.ValueAnimator;
 import android.app.Activity;
-import android.content.BroadcastReceiver;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.hardware.Sensor;
-import android.hardware.SensorManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -28,18 +23,14 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.text.Editable;
 import android.text.TextUtils;
-import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
-import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.SearchView;
 import android.widget.Toast;
@@ -47,56 +38,48 @@ import android.widget.Toast;
 import com.home.konovaloff.homework.global.Global;
 import com.home.konovaloff.homework.global.Preferences;
 import com.home.konovaloff.homework.interfaces.IListener;
-import com.home.konovaloff.homework.tasks.DummyIntentService;
+import com.home.konovaloff.homework.model.WeatherRequest;
 import com.home.konovaloff.homework.tasks.DummyTask;
 
 import java.io.InputStream;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import static com.home.konovaloff.homework.tasks.DummyIntentService.EXTRA_MESSAGE;
-import static com.home.konovaloff.homework.tasks.DummyIntentService.EXTRA_REPEAT_COUNT;
-import static com.home.konovaloff.homework.tasks.DummyIntentService.EXTRA_RESULT;
-import static com.home.konovaloff.homework.tasks.DummyIntentService.RESULT_ERROR;
-import static com.home.konovaloff.homework.tasks.DummyIntentService.RESULT_SUCCESS;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
+import retrofit2.http.GET;
+import retrofit2.http.Query;
 
-public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, View.OnClickListener, IListener {
-    public static final byte SERVICE_STOPPED = Byte.MAX_VALUE;
-    public static final byte SERVICE_RUNNING = Byte.MIN_VALUE;
-
+public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, View.OnClickListener{//, IListener
     public static final String COM_WHATSAPP = "com.whatsapp";
-//    public static final String DEFAULT_USERNAME = "Guest";
     public static final int IDD_SELECT_PHOTO = 1;
 
     private static final String TAG = MainActivity.class.getSimpleName();
-    private static final String KEY_TASK = "main.activity.dummytask";
-    private static final String KEY_SERVICE = "main.activity.dummyservice";
 
     private DrawerLayout drawerLayout;
     private DrawerNavigation navigation;
     private ActionBarDrawerToggle drawerToggle;
     private ValueAnimator drawerToggleAnimator;
     private Toolbar toolbar;
-
-    private boolean doubleBackPress;
-    private Handler handler;
-
-    //Lesson 2
-    private List<Sensor> sensors;
-
-    //lesson 3
     private ProgressBar progressBar;
 
-    private DummyTask dummyTask;
-    private BroadcastReceiver receiver;
-    private byte service_is_in_progress;
+    /**
+     * Нужен для реализации двойного нажатия
+     */
+    private Handler handler;
+    private boolean doubleBackPress;
 
-    //lesson 4
-    private ImageButton btOK;
-    private EditText etAddress;
-    private WebView wvContent;
-    private OkHttpRequester requestMaker;
+    //Lesson 6. Retrofit+GSON
+    private OpenWeather openWeather;
+    private String city = "Samara";
+
+    public interface OpenWeather {
+        @GET("data/2.5/weather")
+        Call<WeatherRequest> loadWeather(@Query("q") String cityCountry, @Query("appid") String keyApi);
+    }
 
     private final View.OnClickListener navigationClickListener =
             new View.OnClickListener() {
@@ -115,6 +98,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 }
             };
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         getSupportFragmentManager().addOnBackStackChangedListener(fragmentBackStackListener);
@@ -124,7 +108,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         this.setTitle(MyApp.getName());
 
-        setSupportActionBar ( toolbar );
+        setSupportActionBar(toolbar);
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             actionBar.setHomeButtonEnabled(true);
@@ -141,98 +125,65 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         navigation.setNavigationItemSelectedListener(this);
         navigation.setUserName(Preferences.loadStringPreference(this, getString(R.string.pref_username), getString(R.string.default_username)));
         String avatarPathString = Preferences.loadStringPreference(this, getString(R.string.pref_ava_path), getString(R.string.empty));
-        if (!TextUtils.isEmpty(avatarPathString)){
+        if (!TextUtils.isEmpty(avatarPathString)) {
             setAvatar(Uri.parse(avatarPathString));
         }
 
         navigation.setImageClickListener(this);
         navigation.setUserNameClickListener(this);
 
-        SensorManager sensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
-        if (sensorManager != null)
-            sensors = sensorManager.getSensorList(Sensor.TYPE_ALL);
-
-        handler = new Handler();
-
-        setupBrowser();
-
-        setupReceiver();
-
-        if (savedInstanceState == null){
-            //Если мы тут в первый раз
-        }else {
+        if (savedInstanceState == null) {
+            showProgress(true);
+            initRetorfit();
+            requestRetrofit(city, Global.APIKEY);
+        } else {
             //Проверяем, может есть запущенные задачи, для восстановления прогресса
             restoreInstanceState();
         }
     }
 
-    private void setupBrowser() {
-        etAddress = findViewById(R.id.etURL);
-        if (etAddress != null){
-            etAddress.setText(getString(R.string.default_site));
-        }
+    private void initRetorfit() {
+        Retrofit retrofit;
+        retrofit = new Retrofit.Builder()
+                .baseUrl(Global.API)////Базовая часть адреса
+                .addConverterFactory(GsonConverterFactory.create()) //Конвертер, необходимый для преобразования JSON в объекты
+                .build();
 
-        btOK = findViewById(R.id.btOK);
-        if (btOK != null)
-            btOK.setOnClickListener(this);
-
-        wvContent = findViewById(R.id.wvContent);
-        if (wvContent != null){
-            wvContent.getSettings().setBuiltInZoomControls(true);
-            wvContent.getSettings().setSupportZoom(true);
-            wvContent.getSettings().setLoadWithOverviewMode(true);
-            wvContent.getSettings().setJavaScriptEnabled(true);
-        }
-        requestMaker = new OkHttpRequester(new OkHttpRequester.OnResponseCompleted() {
-            @Override
-            public void onCompleted(String content) {
-                if (wvContent != null)
-                    wvContent.loadData(content, "text/html; charset=utf-8" , "utf-8");
-            }
-        });
-        requestMaker.run(getString(R.string.default_site));
+        //Создаем объект, при помощи которого будем выполнять запросы
+        openWeather = retrofit.create(OpenWeather.class);
     }
 
+    private void requestRetrofit(String city, String keyApi) {
+        openWeather.loadWeather(city, keyApi)
+                .enqueue(new Callback<WeatherRequest>() {
+                    @Override
+                    public void onResponse(Call<WeatherRequest> call, Response<WeatherRequest> response) {
+                        if (response.body() != null) {
+                            Global.log_e(TAG, response.body().getBase());
+                        }
+                        Global.toast(getString(R.string.success));
+                        showProgress(false);
+                    }
+
+                    @Override
+                    public void onFailure(Call<WeatherRequest> call, Throwable t) {
+                        Global.log_e(TAG, call.toString());
+                        Global.toast(call.toString());
+                        showProgress(false);
+                    }
+                });
+    }
+
+
     private void setAvatar(Uri path) {
-        try{
+        try {
             InputStream inputStream = getContentResolver().openInputStream(path);
             Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
 
             navigation.setUserImage(bitmap);
-        }catch (Exception e){
+        } catch (Exception e) {
             Global.log_e(TAG, e.toString());
         }
-    }
-
-    /**
-     * Настраиваем ресивер для службы
-     */
-    private void setupReceiver() {
-        receiver = new BroadcastReceiver(){
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                service_is_in_progress = SERVICE_STOPPED;
-
-                byte status = intent.getByteExtra(EXTRA_RESULT, (byte)0);
-                String resText = getString(R.string.empty);
-                switch (status) {
-                    case RESULT_SUCCESS:
-                        resText = getString(R.string.success);
-                        break;
-                    case RESULT_ERROR:
-                        resText = intent.getStringExtra(EXTRA_MESSAGE);
-                        break;
-                    default:
-                        break;
-                }
-
-                Global.toast(resText);
-                showProgress(false);
-//                enableButton(btStartService, true);
-            }
-        };
-
-        registerReceiver(receiver, new IntentFilter(DummyIntentService.INTENT_FILTER));
     }
 
     private void bindContentView(@LayoutRes int layoutResId) {
@@ -254,18 +205,19 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void setupSearch(Menu menu) {
-        MenuItem search = menu.findItem (R.id.action_search ); // Поиск пункта меню поиска
-        SearchView searchText = (SearchView)search.getActionView(); // Строка поиска
-        searchText.setOnQueryTextListener ( new SearchView.OnQueryTextListener () {
+        MenuItem search = menu.findItem(R.id.action_search); // Поиск пункта меню поиска
+        SearchView searchText = (SearchView) search.getActionView(); // Строка поиска
+        searchText.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             // Реагирует на конец ввода поиска
             @Override
-            public boolean onQueryTextSubmit ( String query ) {
-                Global.toast(query);
+            public boolean onQueryTextSubmit(String query) {
+                city = query;
                 return true;
             }
+
             // Реагирует на нажатие каждой клавиши
             @Override
-            public boolean onQueryTextChange ( String newText ) {
+            public boolean onQueryTextChange(String newText) {
                 return true;
             }
         });
@@ -274,13 +226,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         boolean res;
-        switch (item.getItemId()){
-            case R.id.menu_startTask:
-                startDummyTask();
-                res = true;
-                break;
-            case R.id.menu_startService:
-                startDummyService(5);
+        switch (item.getItemId()) {
+            case R.id.menu_refresh:
+                requestRetrofit(city, Global.APIKEY);
                 res = true;
                 break;
             default:
@@ -293,7 +241,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     @Override
     public void onBackPressed() {
         //Возможно, потом пригодится
-        if (getSupportFragmentManager().getBackStackEntryCount() != 0){
+        if (getSupportFragmentManager().getBackStackEntryCount() != 0) {
             super.onBackPressed();
             return;
         }
@@ -405,7 +353,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         String fio = navigation.getUserName();
 
         String description;
-		if (fio != null && !fio.isEmpty() && !fio.equalsIgnoreCase(getString(R.string.default_username))) {
+        if (fio != null && !fio.isEmpty() && !fio.equalsIgnoreCase(getString(R.string.default_username))) {
             description = String.format(getString(R.string.whatsapp_with_username), fio, MyApp.getName());
         } else
             description = String.format("%s %s:\n", getString(R.string.whatsapp_default), MyApp.getName());
@@ -421,27 +369,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private void startActionAbout() {
-		Global.toast(getString(R.string.about_item_text));
+        Global.toast(getString(R.string.about_item_text));
     }
 
     /**
      * Запускаем процесс обновления данных
      */
     private void startSynchronization() {
-        String[] array = new String[sensors.size()];
-        for (int i = 0; i < sensors.size();i++){
-            Sensor item = sensors.get(i);
-            array[i] = String.format("%s %s %s", item.getName(), item.getVendor(), item.getVersion());
-        }
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle(R.string.sensors_list)
-                .setItems(array, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        Global.toast(sensors.get(which).toString());
-                    }
-                });
-        builder.create().show();
     }
 
     /**
@@ -454,7 +389,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     @Override
     public void onClick(View view) {
-        switch (view.getId()){
+        switch (view.getId()) {
             case R.id.app_navigation_image:
                 //Вызываем диалог выбора картинки
                 Intent photoPickerIntent = new Intent(Intent.ACTION_PICK);
@@ -486,51 +421,29 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                         .show();
                 break;
             case R.id.btOK:
-                if (etAddress != null && requestMaker != null)
-                    requestMaker.run(etAddress.getText().toString());
+
                 break;
         }
     }
 
-    private void startDummyService(int repeatCount) {
-//        enableButton(btStartService, false);
-        showProgress(true);
-
-        Intent dummyIS = new Intent(this, DummyIntentService.class);
-        dummyIS.putExtra(EXTRA_REPEAT_COUNT, repeatCount);
-
-        startService(dummyIS);
-        service_is_in_progress = SERVICE_RUNNING;
-    }
-
-    private void startDummyTask(){
-//        enableButton(btStartTask, false);
-
-        showProgress(true);
-
-        dummyTask = new DummyTask();
-        dummyTask.setListener(this);
-        dummyTask.execute();
-    }
-
-    private void enableButton(Button button, boolean value){
-        if (button != null){
+    private void enableButton(Button button, boolean value) {
+        if (button != null) {
             button.setEnabled(value);
         }
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        if (resultCode == Activity.RESULT_OK){
-            switch (requestCode){
+        if (resultCode == Activity.RESULT_OK) {
+            switch (requestCode) {
                 case IDD_SELECT_PHOTO:
-                    try{
+                    try {
                         Uri path = data.getData();
 
                         Preferences.saveStringPreference(this, getString(R.string.pref_ava_path), path.toString());
 
                         setAvatar(path);
-                    }catch (Exception e){
+                    } catch (Exception e) {
                         Global.log_e(TAG, e.toString());
                     }
                     break;
@@ -538,38 +451,35 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
     }
 
-    @Override
-    public void onTaskComplete(DummyTask task) {
-        boolean res;
-        try{
-            res = task.get();
-        }catch (Exception e){
-            res = false;
-        }
+//    @Override
+//    public void onTaskComplete(DummyTask task) {
+//        boolean res;
+//        try {
+//            res = task.get();
+//        } catch (Exception e) {
+//            res = false;
+//        }
+//
+//        if (res) {
+//            Global.toast(getString(R.string.success));
+//        } else {
+//            Global.toast(getString(R.string.err_runtime) + task.getLastError());
+//        }
+//
+//        showProgress(false);
+////        enableButton(btStartTask, true);
+//        //Возвращаем заголовок в исходное состояние
+//        setTitle(MyApp.getName());
+//    }
+//
+//    @Override
+//    public void onProgressUpdate(String txt) {
+//        //Статус прогресса будем показывать в заголовке
+//        this.setTitle(txt);
+//    }
 
-        if (res){
-            Global.toast(getString(R.string.success));
-        }else {
-            Global.toast(getString(R.string.err_runtime)+task.getLastError());
-        }
-
-        this.dummyTask.setListener(null);
-        this.dummyTask = null;
-
-        showProgress(false);
-//        enableButton(btStartTask, true);
-        //Возвращаем заголовок в исходное состояние
-        setTitle(MyApp.getName());
-    }
-
-    @Override
-    public void onProgressUpdate(String txt) {
-        //Статус прогресса будем показывать в заголовке
-        this.setTitle(txt);
-    }
-
-    private void showProgress(boolean value){
-        if (progressBar != null){
+    private void showProgress(boolean value) {
+        if (progressBar != null) {
             progressBar.setVisibility(value ? View.VISIBLE : View.INVISIBLE);
         }
     }
@@ -579,21 +489,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (objCustomInstance != null && objCustomInstance instanceof java.util.Map) {
             java.util.Map customInstance = (java.util.Map) objCustomInstance;
 
-            if (customInstance.containsKey(KEY_TASK)) {
-                showProgress(true);
-
-                dummyTask = (DummyTask)customInstance.get(KEY_TASK);
-                dummyTask.setListener(this);
-
-//                enableButton(btStartTask, false);
-            }
-
-            if (customInstance.containsKey(KEY_SERVICE)) {
-                service_is_in_progress = SERVICE_RUNNING;
-                showProgress(true);
-
-//                enableButton(btStartService, false);
-            }
+//            if (customInstance.containsKey(KEY_TASK)) {
+//                showProgress(true);
+//
+//                dummyTask = (DummyTask)customInstance.get(KEY_TASK);
+//                dummyTask.setListener(this);
+//
+////                enableButton(btStartTask, false);
+//            }
         }
     }
 
@@ -602,15 +505,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         Map<String, Object> customInstance = new HashMap<>();
 
         //Отвязываемся от активности
-        if (dummyTask != null) {
-            dummyTask.setListener(null);
-            customInstance.put(KEY_TASK, dummyTask);
-            dummyTask = null;
-        }
-
-        if (service_is_in_progress == SERVICE_RUNNING){
-            customInstance.put(KEY_SERVICE, service_is_in_progress);
-        }
+//        if (dummyTask != null) {
+//            dummyTask.setListener(null);
+//            customInstance.put(KEY_TASK, dummyTask);
+//            dummyTask = null;
+//        }
 
         return customInstance.isEmpty() ?
                 super.onRetainCustomNonConfigurationInstance() : customInstance;
@@ -618,11 +517,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     @Override
     protected void onDestroy() {
-        try{
-            unregisterReceiver(receiver);
-        }catch (Exception e){
-            Global.log_e(TAG, e.toString());
-        }
         super.onDestroy();
     }
 

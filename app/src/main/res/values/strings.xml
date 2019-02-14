@@ -9,6 +9,7 @@
     <string name="menu_add">Добавить</string>
     <string name="menu_clear">Очистить</string>
     <string name="action_search">Найти</string>
+    <string name="menu_refresh">Обновить</string>
 
     <!-- NAVIGATION -->
     <string name="sync">Синхронизировать</string>
