@@ -6,18 +6,24 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 
+import com.home.konovaloff.homework.global.Global;
+
 public class MyApp extends Application {
+    private static final String TAG = MyApp.class.getSimpleName();
+
+    private static MyApp INSTANCE;
+
     @SuppressLint("StaticFieldLeak")
-    private static volatile Context context;
+    public static MyApp getInstance(){return INSTANCE;}
 
     @Override
     public void onCreate() {
-        context = this;
         super.onCreate();
+        INSTANCE = this;
     }
 
     public static Context getContext(){
-        return context;
+        return getInstance().getApplicationContext();
     }
 
     public static String getName() {
@@ -27,9 +33,9 @@ public class MyApp extends Application {
     public static String getLabel() {
         String applicationLabel = null;
 
-        int labelRes = context.getApplicationInfo().labelRes;
+        int labelRes = INSTANCE.getApplicationInfo().labelRes;
         if (labelRes != 0) {
-            applicationLabel = context.getString(labelRes);
+            applicationLabel = INSTANCE.getString(labelRes);
         }
 
         return applicationLabel;
@@ -40,10 +46,10 @@ public class MyApp extends Application {
 
         PackageInfo packageInfo = null;
         try {
-            packageInfo = context.getPackageManager()
-                    .getPackageInfo(context.getPackageName(), 0);
+            packageInfo = INSTANCE.getPackageManager()
+                    .getPackageInfo(INSTANCE.getPackageName(), 0);
         } catch (PackageManager.NameNotFoundException e) {
-            // do nothing
+            Global.log_e(TAG, e.toString());
         }
 
         if (packageInfo != null) {
