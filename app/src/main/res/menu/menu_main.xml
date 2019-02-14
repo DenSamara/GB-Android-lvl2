@@ -9,10 +9,11 @@
         app:actionViewClass = "android.widget.SearchView"
         android:title = "@string/action_search" />
     <item
-        android:id = "@+id/menu_add"
+        android:id = "@+id/menu_startTask"
         android:icon = "@android:drawable/ic_menu_add"
-        android:title = "@string/menu_add" />
+        android:title = "@string/btStartTask" />
     <item
-        android:title = "@string/menu_clear"
-        android:id = "@+id/menu_clear" />
+        android:id = "@+id/menu_startService"
+        android:title = "@string/btStartService"
+        />
 </menu>
