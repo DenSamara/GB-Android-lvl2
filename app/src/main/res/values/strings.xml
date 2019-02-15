@@ -2,8 +2,9 @@
     <string name="app_name">HomeWork</string>
 
     <!-- DEFAULTS-->
-    <string name="default_username">Гость</string>
+    <string name="default_username">Guest</string>
     <string name="default_site">ya.ru</string>
+    <string name="default_city">Samara</string>
 
     <!-- MENU -->
     <string name="menu_add">Добавить</string>

@@ -36,10 +36,9 @@ import android.widget.SearchView;
 import android.widget.Toast;
 
 import com.home.konovaloff.homework.global.Global;
-import com.home.konovaloff.homework.global.Preferences;
-import com.home.konovaloff.homework.interfaces.IListener;
 import com.home.konovaloff.homework.model.WeatherRequest;
-import com.home.konovaloff.homework.tasks.DummyTask;
+import com.home.konovaloff.homework.settings.AppSettings;
+import com.home.konovaloff.homework.settings.SettingsStorage;
 
 import java.io.InputStream;
 import java.util.HashMap;
@@ -55,6 +54,7 @@ import retrofit2.http.Query;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, View.OnClickListener{//, IListener
     public static final String COM_WHATSAPP = "com.whatsapp";
+    private static final String APP_DATA_STORAGE_NAME = "app.settings.storage";
     public static final int IDD_SELECT_PHOTO = 1;
 
     private static final String TAG = MainActivity.class.getSimpleName();
@@ -71,10 +71,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
      */
     private Handler handler;
     private boolean doubleBackPress;
+    private AppSettings settings;
+    private SettingsStorage settingsStorage;
 
     //Lesson 6. Retrofit+GSON
     private OpenWeather openWeather;
-    private String city = "Samara";
 
     public interface OpenWeather {
         @GET("data/2.5/weather")
@@ -108,6 +109,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         this.setTitle(MyApp.getName());
 
+        settingsStorage = new SettingsStorage(this, APP_DATA_STORAGE_NAME);
+        settings = settingsStorage.getSettings();
+        if (settings == null){
+            settings = AppSettings.getDefault(this);
+        }
+
         setSupportActionBar(toolbar);
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
@@ -123,8 +130,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         setDrawerToggleEnable(getSupportFragmentManager().getBackStackEntryCount() == 0);
 
         navigation.setNavigationItemSelectedListener(this);
-        navigation.setUserName(Preferences.loadStringPreference(this, getString(R.string.pref_username), getString(R.string.default_username)));
-        String avatarPathString = Preferences.loadStringPreference(this, getString(R.string.pref_ava_path), getString(R.string.empty));
+        navigation.setUserName(settings.userName());
+        String avatarPathString = settings.logoPath();
         if (!TextUtils.isEmpty(avatarPathString)) {
             setAvatar(Uri.parse(avatarPathString));
         }
@@ -135,7 +142,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (savedInstanceState == null) {
             showProgress(true);
             initRetorfit();
-            requestRetrofit(city, Global.APIKEY);
+            requestRetrofit(settings.city(), Global.APIKEY);
         } else {
             //Проверяем, может есть запущенные задачи, для восстановления прогресса
             restoreInstanceState();
@@ -211,7 +218,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             // Реагирует на конец ввода поиска
             @Override
             public boolean onQueryTextSubmit(String query) {
-                city = query;
+                settings.city(query);
+                settingsStorage.saveSettings(settings);
+                requestRetrofit(settings.city(), Global.APIKEY);
                 return true;
             }
 
@@ -228,7 +237,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         boolean res;
         switch (item.getItemId()) {
             case R.id.menu_refresh:
-                requestRetrofit(city, Global.APIKEY);
+                requestRetrofit(settings.city(), Global.APIKEY);
                 res = true;
                 break;
             default:
@@ -408,8 +417,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                         .setPositiveButton(getString(R.string.change), new DialogInterface.OnClickListener() {
                             public void onClick(DialogInterface dialog, int whichButton) {
                                 if (editText != null) {
-                                    Preferences.saveStringPreference(MainActivity.this, getString(R.string.pref_username), editText.getText().toString());
                                     navigation.setUserName(editText.getText().toString());
+
+                                    settings.userName(editText.getText().toString());
+                                    settingsStorage.saveSettings(settings);
                                 }
                             }
                         })
@@ -439,10 +450,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 case IDD_SELECT_PHOTO:
                     try {
                         Uri path = data.getData();
-
-                        Preferences.saveStringPreference(this, getString(R.string.pref_ava_path), path.toString());
-
                         setAvatar(path);
+
+                        settings.logoPath(path.toString());
                     } catch (Exception e) {
                         Global.log_e(TAG, e.toString());
                     }
