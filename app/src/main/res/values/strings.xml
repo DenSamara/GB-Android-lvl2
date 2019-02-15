@@ -2,12 +2,15 @@
     <string name="app_name">HomeWork</string>
 
     <!-- DEFAULTS-->
-    <string name="default_username">Гость</string>
+    <string name="default_username">Guest</string>
+    <string name="default_site">ya.ru</string>
+    <string name="default_city">Samara</string>
 
     <!-- MENU -->
     <string name="menu_add">Добавить</string>
     <string name="menu_clear">Очистить</string>
     <string name="action_search">Найти</string>
+    <string name="menu_refresh">Обновить</string>
 
     <!-- NAVIGATION -->
     <string name="sync">Синхронизировать</string>
@@ -55,4 +58,5 @@
 
     <!-- TEXT -->
     <string name="about_item_text">Автор: Коновалов Денис. Проект выполнен в качестве домашнего задания в рамках обучения программированию для платформы Android</string>
+    <string name="hint_input_address">Введите адрес: https://</string>
 </resources>
