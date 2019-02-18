@@ -38,6 +38,8 @@ import android.widget.Toast;
 
 import com.home.konovaloff.homework.api.ServiceGenerator;
 import com.home.konovaloff.homework.global.Global;
+import com.home.konovaloff.homework.model.DB.DBHelper;
+import com.home.konovaloff.homework.model.WeatherItem;
 import com.home.konovaloff.homework.model.WeatherRequest;
 import com.home.konovaloff.homework.settings.AppSettings;
 import com.home.konovaloff.homework.settings.SettingsStorage;
@@ -78,6 +80,9 @@ public class MainActivity extends AppCompatActivity implements
 
     //Lesson 6. Retrofit+GSON
     private OpenWeather openWeather;
+
+    //Lesson 7.
+    private DBHelper helper;
 
     public interface OpenWeather {
         @GET("data/2.5/weather")
@@ -122,6 +127,7 @@ public class MainActivity extends AppCompatActivity implements
         setupNavigation();
 
         openWeather = ServiceGenerator.createService(OpenWeather.class);
+        helper = new DBHelper(MainActivity.this);
 
         if (savedInstanceState == null) {
             showProgress(true);
@@ -165,14 +171,20 @@ public class MainActivity extends AppCompatActivity implements
                         if (response.body() != null) {
                             Global.log_e(TAG, response.body().getBase());
                             //Сохраняем в БД
+                            //TODO убрать из основного потока
+
+                            WeatherItem item = parseResponse(response);
+                            long id = WeatherItem.insert(helper.getWritableDatabase(), item);
+                            Global.log_e(TAG, "Record inserted with id = "+Long.toString(id));
                         }
 
                         Global.toast(getString(R.string.success));
                         showProgress(false);
 
                         //Запускам фрагмент с информацией
-                        //Фрагменты с городами будем добавлять. Потом можно изменить на replace
-                        addFragment(FragmentWather.newInstance(settings.city()));
+                        //Пока фрагменты с городами будем добавлять
+                        //Потом нужно проверить его существование и обновить только данные в нём
+                        addFragment(FragmentWeather.newInstance(settings.city()));
                     }
 
                     @Override
@@ -182,6 +194,22 @@ public class MainActivity extends AppCompatActivity implements
                         showProgress(false);
                     }
                 });
+    }
+
+    private WeatherItem parseResponse(Response<WeatherRequest> response) {
+        String details = String.format("%s\n%s %s\n%s %s\n%s %.0f degrees, %s ms",
+                response.body().getWeather()[0].getDescription(),
+                getString(R.string.humidity), response.body().getMain().getHumidity(),
+                getString(R.string.pressure), response.body().getMain().getPressure(),
+                getString(R.string.wind), response.body().getWind().getDeg(), response.body().getWind().getSpeed()
+                );
+        String imageUrl = String.format(getString(R.string.icon_url), response.body().getWeather()[0].getIcon());
+        return new WeatherItem(-1,
+                response.body().getName(),                          //city
+                details,   //details
+                response.body().getMain().getTemp(),                //temp
+                imageUrl,          //url
+                System.currentTimeMillis());
     }
 
 

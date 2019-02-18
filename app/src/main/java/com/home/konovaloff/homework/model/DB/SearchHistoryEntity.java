@@ -1,5 +1,7 @@
 package com.home.konovaloff.homework.model.DB;
 
+import android.database.SQLException;
+import android.database.sqlite.SQLiteDatabase;
 import android.provider.BaseColumns;
 
 public class SearchHistoryEntity implements BaseColumns {
@@ -12,7 +14,7 @@ public class SearchHistoryEntity implements BaseColumns {
     public static final String COLUMN_DETAILS = "details";
     public static final String COLUMN_IMAGE_URL = "imageURL";
 
-    public static String[] ALL_COLUMN = {
+    public static String[] COLUMNS = {
             COLUMN_ID,
             COLUMN_CITY,
             COLUMN_TEMPERATURE,
@@ -42,4 +44,9 @@ public class SearchHistoryEntity implements BaseColumns {
             "CREATE INDEX idxCity ON %s (%s)",
             TABLE_NAME,
             COLUMN_CITY);
+
+    //Нужна при выходе пользователя
+    public static void clear(SQLiteDatabase db) throws SQLException {
+        db.execSQL("DELETE FROM "+SearchHistoryEntity.TABLE_NAME);
+    }
 }

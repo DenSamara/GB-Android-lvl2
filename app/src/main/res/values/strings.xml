@@ -45,6 +45,10 @@
     <string name="prepare">Подготовка</string>
     <string name="done">Выполнено</string>
 
+    <string name="humidity">Humidity</string>
+    <string name="pressure">Pressure</string>
+    <string name="wind">Wind</string>
+
     <!-- PREFERENCES -->
     <string name="pref_ava_path">preference_avatar</string>
     <string name="pref_username">preference_username</string>
@@ -56,4 +60,6 @@
     <!-- TEXT -->
     <string name="about_item_text">Автор: Коновалов Денис. Проект выполнен в качестве домашнего задания в рамках обучения программированию для платформы Android</string>
     <string name="hint_username">@string/username</string>
+
+    <string name="icon_url">http://openweathermap.org/img/w/%s.png</string>
 </resources>

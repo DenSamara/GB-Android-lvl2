@@ -10,7 +10,7 @@ import com.home.konovaloff.homework.global.Global;
 public class DBHelper extends SQLiteOpenHelper {
     private static final String TAG = DBHelper.class.getSimpleName();
 
-    private static final int VERSION = 2;
+    private static final int VERSION = 1;
     public static final String DATABASE_NAME = "weather.db";
 
     public DBHelper(Context context)
@@ -67,30 +67,12 @@ public class DBHelper extends SQLiteOpenHelper {
                 switch (newVersion){
                     case 3:
                         updateVersion2to3(db);
-                    case 11:
-                    case 12:
-                    case 13:
                         break;
                 }
                 break;
-            case 10:
+            case 3:
                 switch (newVersion){
-                    case 11:
-                    case 12:
-                    case 13:
-                        break;
-                }
-                break;
-            case 11:
-                switch (newVersion){
-                    case 12:
-                    case 13:
-                        break;
-                }
-                break;
-            case 12:
-                switch (newVersion){
-                    case 13:
+                    case 4:
                         break;
                 }
                 break;
