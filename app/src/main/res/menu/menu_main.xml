@@ -12,6 +12,5 @@
         android:id = "@+id/menu_refresh"
         android:icon = "@android:drawable/ic_menu_rotate"
         android:title = "@string/menu_refresh"
-        app:showAsAction = "ifRoom|collapseActionView"
         />
 </menu>
