@@ -10,13 +10,25 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
+import com.bumptech.glide.request.RequestOptions;
+import com.home.konovaloff.homework.global.Global;
+
 /**
- *Фрагмент для отображения погоды
- *
+ * Фрагмент для отображения погоды
  */
 public class FragmentWather extends Fragment {
     public static final String TAG = FragmentWather.class.getSimpleName();
     public static final String EXTRA_CITY = "FragmentWather.data";
+
+    public final static int IMAGE_DEFAULT = R.drawable.image_default;
+
+    public final static RequestOptions IMAGE_REQUEST_OPTIONS = new RequestOptions()
+            .centerCrop()
+            .placeholder(IMAGE_DEFAULT)
+            .error(IMAGE_DEFAULT)
+            .diskCacheStrategy(DiskCacheStrategy.ALL);
 
     private String city;
 
@@ -53,11 +65,18 @@ public class FragmentWather extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
+
         bind(view);
+
         tvCity.setText(city);
+        tvLastUpdate.setText(Formatter.formatDateTime(System.currentTimeMillis()));
+        Glide.with(this)
+                .load("https://c1.staticflickr.com/1/186/31520440226_175445c41a_b.jpg")
+                .apply(IMAGE_REQUEST_OPTIONS)
+                .into(imageWeather);
     }
 
-    private void bind(View v){
+    private void bind(View v) {
         tvCity = v.findViewById(R.id.city_field);
         tvLastUpdate = v.findViewById(R.id.updated_field);
         imageWeather = v.findViewById(R.id.weather_icon);
