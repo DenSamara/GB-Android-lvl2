@@ -8,6 +8,15 @@ import com.home.konovaloff.homework.MyApp;
 
 public class Global {
     public final static String APIKEY = "c1346f4fe62c16f203d047b15aeafd21";
+
+    public static final int IMAGE_DEFAULT = R.drawable.image_default;
+
+    public static final RequestOptions IMAGE_REQUEST_OPTIONS = new RequestOptions()
+            .centerCrop()
+            .placeholder(IMAGE_DEFAULT)
+            .error(IMAGE_DEFAULT)
+            .diskCacheStrategy(DiskCacheStrategy.ALL);
+
     private final static boolean showDebugInfo = true;
 
     public static void toast(Context ctx, String text){
