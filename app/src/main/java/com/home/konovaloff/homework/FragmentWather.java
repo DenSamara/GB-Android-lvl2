@@ -14,6 +14,7 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.RequestOptions;
 import com.home.konovaloff.homework.global.Global;
+import com.home.konovaloff.homework.model.DB.DBHelper;
 
 /**
  * Фрагмент для отображения погоды
@@ -30,7 +31,7 @@ public class FragmentWather extends Fragment {
     private TextView tvDetails;
 
     private ImageView imageWeather;
-//    DbHelper helper;
+    DBHelper helper;
 
     public static FragmentWather newInstance(String city) {
         Bundle args = new Bundle();
@@ -46,6 +47,7 @@ public class FragmentWather extends Fragment {
         super.onCreate(savedInstanceState);
 
         city = getArguments().getString(EXTRA_CITY);
+        helper = new DBHelper(this);
     }
 
     @Nullable
@@ -63,17 +65,9 @@ public class FragmentWather extends Fragment {
         tvCity.setText(city);
         tvLastUpdate.setText(Formatter.formatDateTime(System.currentTimeMillis()));
 
-        int IMAGE_DEFAULT = R.drawable.image_default;
-
-        RequestOptions IMAGE_REQUEST_OPTIONS = new RequestOptions()
-                .centerCrop()
-                .placeholder(IMAGE_DEFAULT)
-                .error(IMAGE_DEFAULT)
-                .diskCacheStrategy(DiskCacheStrategy.ALL);
-
         Glide.with(this)
-                .load("https://c1.staticflickr.com/1/186/31520440226_175445c41a_b.jpg")
-                .apply(IMAGE_REQUEST_OPTIONS)
+                .load("http://oreninform.ru/upload/iblock/e52/nTBMRkETA.jpeg")
+                .apply(Global.IMAGE_REQUEST_OPTIONS)
                 .into(imageWeather);
     }
 
