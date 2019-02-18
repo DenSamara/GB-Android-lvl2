@@ -3,8 +3,9 @@
 
     <!-- DEFAULTS-->
     <string name="default_username">Guest</string>
-    <string name="default_site">ya.ru</string>
+    <string name="default_date">01.01.2019</string>
     <string name="default_city">Samara</string>
+    <string name="default_temp">24</string>
 
     <!-- MENU -->
     <string name="menu_add">Добавить</string>
@@ -31,21 +32,12 @@
     <string name="bt_cancel">@string/cancel</string>
     <string name="bt_change">@string/change</string>
 
-    <string name="bt_monday">ПН</string>
-    <string name="bt_tuesday">ВТ</string>
-    <string name="bt_wednesday">СР</string>
-    <string name="bt_thursday">ЧТ</string>
-    <string name="bt_friday">ПТ</string>
-    <string name="bt_saturday">СБ</string>
-    <string name="bt_sunday">ВС</string>
-
     <!-- ERRORS -->
     <string name="err_whatsapp_is_not_installed">WhatsApp не установлен</string>
     <string name="err_runtime">Ошибка выполнения: </string>
 
     <!-- COMMON -->
     <string name="empty"> </string>
-    <string name="sensors_list">Список датчиков</string>
     <string name="success">Успешно завершено</string>
     <string name="username">Как вас зовут?</string>
     <string name="change">Изменить</string>
@@ -63,5 +55,5 @@
 
     <!-- TEXT -->
     <string name="about_item_text">Автор: Коновалов Денис. Проект выполнен в качестве домашнего задания в рамках обучения программированию для платформы Android</string>
-    <string name="hint_input_address">Введите адрес: https://</string>
+    <string name="hint_username">@string/username</string>
 </resources>

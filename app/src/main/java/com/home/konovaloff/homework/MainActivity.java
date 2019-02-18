@@ -17,7 +17,9 @@ import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
@@ -25,13 +27,11 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.SearchView;
 import android.widget.Toast;
@@ -164,9 +164,15 @@ public class MainActivity extends AppCompatActivity implements
                     public void onResponse(Call<WeatherRequest> call, Response<WeatherRequest> response) {
                         if (response.body() != null) {
                             Global.log_e(TAG, response.body().getBase());
+                            //Сохраняем в БД
                         }
+
                         Global.toast(getString(R.string.success));
                         showProgress(false);
+
+                        //Запускам фрагмент с информацией
+                        //Фрагменты с городами будем добавлять. Потом можно изменить на replace
+                        addFragment(FragmentWather.newInstance(settings.city()));
                     }
 
                     @Override
@@ -421,7 +427,7 @@ public class MainActivity extends AppCompatActivity implements
                 startActivityForResult(photoPickerIntent, IDD_SELECT_PHOTO);
                 break;
             case R.id.app_navigation_username:
-                MyDialogFragment dlg = MyDialogFragment.newInstance(getString(R.string.caption_meet), null, getString(R.string.bt_change), null);
+                MyDialogFragment dlg = MyDialogFragment.newInstance(getString(R.string.caption_meet), settings.userName(), getString(R.string.bt_change), null);
                 dlg.setListener(this);
                 dlg.show(getSupportFragmentManager(), "");
 
@@ -460,25 +466,40 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
+    public void addFragment(Fragment fragment) {
+        FragmentManager fm = getSupportFragmentManager();
+        Fragment current = fm.findFragmentById(R.id.container);
+
+        FragmentTransaction ft = fm.beginTransaction();
+
+        if (current == null) {
+            ft.add(R.id.container, fragment);
+        } else {
+            String backStateName =  fragment.getClass().getName();
+            boolean fragmentPopped = fm.popBackStackImmediate (backStateName, 0);
+
+            if (!fragmentPopped) {
+                ft.replace(R.id.container, fragment);
+                ft.addToBackStack(null);
+            }
+        }
+
+        ft.commit();
+    }
+
     /**
      * TODO добавить id для многократного использования
      *
      * @param result
      */
     @Override
-    public void onDialogResult(byte result) {
+    public void onDialogResult(byte result, MyDialogFragment sender) {
         switch (result) {
             case MyDialogFragment.RESULT_YES:
-                // Get the layout inflater
-                LayoutInflater inflater = getLayoutInflater();
-                View v = inflater.inflate(R.layout.username, null);
-                final EditText editText = v.findViewById(R.id.username);
-                if (editText != null) {
-                    navigation.setUserName(editText.getText().toString());
+                navigation.setUserName(sender.getInputText());
 
-                    settings.userName(editText.getText().toString());
-                    settingsStorage.saveSettings(settings);
-                }
+                settings.userName(sender.getInputText());
+                settingsStorage.saveSettings(settings);
                 break;
             case MyDialogFragment.RESULT_NO:
                 break;
@@ -486,7 +507,5 @@ public class MainActivity extends AppCompatActivity implements
                 break;
         }
     }
-
-
 
 }

@@ -7,11 +7,14 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.app.AlertDialog;
+import android.view.LayoutInflater;
+import android.view.View;
+import android.widget.EditText;
 
 /**
  * Диалог с 3-мя кнопками
- * TODO Builder
- * TODO id для многократного использования в одной активности
+ * TODO Добавить Builder для костомизации
+ * TODO Добавить id для многократного использования в одной активности
  */
 public class MyDialogFragment extends DialogFragment{
     private static final String EXTRA_CAPTION = "MyDialogFragment.caption";
@@ -27,11 +30,12 @@ public class MyDialogFragment extends DialogFragment{
     private String text;
     private String btPositiveText;
     private String btNegativeText;
+    private EditText mEditText;
 
     private IDlgResult listener;
 
     public interface IDlgResult {
-        void onDialogResult(byte result);
+        void onDialogResult(byte result, MyDialogFragment sender);
     }
 
     public static MyDialogFragment newInstance(String caption, String text, String btPos, String btNeg) {
@@ -62,13 +66,17 @@ public class MyDialogFragment extends DialogFragment{
     @NonNull
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
+        LayoutInflater inflater = getActivity().getLayoutInflater();
+        View v = inflater.inflate(R.layout.dialog, null);
+        mEditText = v.findViewById(R.id.dlg_editText);
+
         AlertDialog.Builder adb = new AlertDialog.Builder(getActivity())
                 .setTitle(caption)
                 .setPositiveButton(btPositiveText, new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         if (listener != null){
-                            listener.onDialogResult(RESULT_YES);
+                            listener.onDialogResult(RESULT_YES, MyDialogFragment.this);
                         }
                     }
                 })
@@ -76,14 +84,16 @@ public class MyDialogFragment extends DialogFragment{
                     @Override
                     public void onClick(DialogInterface dialogInterface, int i) {
                         if (listener != null){
-                            listener.onDialogResult(RESULT_CANCEL);
+                            listener.onDialogResult(RESULT_CANCEL, MyDialogFragment.this);
                         }
                     }
                 });
 
+        adb.setView(v);
+
         //Убираем текст, если не нужен
-        if (text != null){
-            adb.setMessage(text);
+        if (mEditText != null){
+            mEditText.setText(text);
         }
 
         //Проверка нужна чтобы убрать кнопку, если не нужна
@@ -92,12 +102,20 @@ public class MyDialogFragment extends DialogFragment{
                 @Override
                 public void onClick(DialogInterface dialogInterface, int i) {
                     if (listener != null){
-                        listener.onDialogResult(RESULT_NO);
+                        listener.onDialogResult(RESULT_NO, MyDialogFragment.this);
                     }
                 }
             });
 
         }
         return adb.create();
+    }
+
+    public String getInputText(){
+        String result = getString(R.string.empty);
+        if (mEditText != null){
+            result = mEditText.getText().toString();
+        }
+        return result;
     }
 }
