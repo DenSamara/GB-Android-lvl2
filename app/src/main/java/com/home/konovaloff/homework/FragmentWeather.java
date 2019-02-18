@@ -12,6 +12,7 @@ import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
 import com.home.konovaloff.homework.global.Global;
+import com.home.konovaloff.homework.model.CityItem;
 import com.home.konovaloff.homework.model.DB.DBHelper;
 import com.home.konovaloff.homework.model.WeatherItem;
 
@@ -24,7 +25,7 @@ public class FragmentWeather extends Fragment {
     public static final String TAG = FragmentWeather.class.getSimpleName();
     public static final String EXTRA_CITY = "FragmentWeather.city";
 
-    private String city;
+    private CityItem city;
 
     private TextView tvCity;
     private TextView tvLastUpdate;
@@ -35,9 +36,9 @@ public class FragmentWeather extends Fragment {
     private ImageView imageWeather;
     DBHelper helper;
 
-    public static FragmentWeather newInstance(String city) {
+    public static FragmentWeather newInstance(CityItem city) {
         Bundle args = new Bundle();
-        args.putString(EXTRA_CITY, city);
+        args.putParcelable(EXTRA_CITY, city);
 
         FragmentWeather fragment = new FragmentWeather();
         fragment.setArguments(args);
@@ -48,7 +49,7 @@ public class FragmentWeather extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        city = getArguments().getString(EXTRA_CITY);
+        city = getArguments().getParcelable(EXTRA_CITY);
         helper = new DBHelper(getActivity());
     }
 
@@ -66,10 +67,12 @@ public class FragmentWeather extends Fragment {
 
         //Загружаем информацию из БД
         //TODO убрать загрузку из основного потока
-        ArrayList<WeatherItem> items = WeatherItem.load(helper.getReadableDatabase(), city);
-        if (items != null && items.size() > 0){
-            WeatherItem last = items.get(0);
-            showData(last);
+        if (city != null) {
+            ArrayList<WeatherItem> items = WeatherItem.load(helper.getReadableDatabase(), city.id());
+            if (items != null && items.size() > 0) {
+                WeatherItem last = items.get(0);
+                showData(last);
+            }
         }
     }
 
@@ -82,7 +85,7 @@ public class FragmentWeather extends Fragment {
     }
 
     private void showData(WeatherItem item) {
-        tvCity.setText(item.city());
+        tvCity.setText(item.city().cityName());
         tvLastUpdate.setText(Formatter.formatDateTime(item.lastUpdate()));
 
         Glide.with(this)

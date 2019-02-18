@@ -10,7 +10,7 @@ import com.home.konovaloff.homework.global.Global;
 public class DBHelper extends SQLiteOpenHelper {
     private static final String TAG = DBHelper.class.getSimpleName();
 
-    private static final int VERSION = 1;
+    private static final int VERSION = 2;
     public static final String DATABASE_NAME = "weather.db";
 
     public DBHelper(Context context)
@@ -26,6 +26,7 @@ public class DBHelper extends SQLiteOpenHelper {
 
     private void createSchema(SQLiteDatabase db) {
         //Таблицы
+        executeSQL(db, CityEntity.CREATE);
         executeSQL(db, SearchHistoryEntity.CREATE);
 
         //Индексы
@@ -86,9 +87,8 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     private void updateVersion1to2(SQLiteDatabase db){
-//        String addCreationDateColumn = String.format("ALTER TABLE %s ADD %s long NOT NULL DEFAULT 0",
-//                SearchHistoryEntity.TABLE_NAME,
-//                SearchHistoryEntity.COLUMN_CREATION);
-//        executeSQL(db, addCreationDateColumn);
+        executeSQL(db, CityEntity.CREATE);
+        executeSQL(db, "DROP TABLE " + SearchHistoryEntity.TABLE_NAME);
+        executeSQL(db, SearchHistoryEntity.CREATE);
     }
 }

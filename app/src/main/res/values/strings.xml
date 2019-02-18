@@ -6,6 +6,7 @@
     <string name="default_date">01.01.2019</string>
     <string name="default_city">Samara</string>
     <string name="default_temp">24</string>
+    <string name="default_country">RU</string>
 
     <!-- MENU -->
     <string name="menu_add">Добавить</string>

@@ -18,12 +18,12 @@ public class WeatherItem {
 
     private long id;
     private long lastUpdate;
-    private String city;
+    private CityItem city;
     private String details;
     private float temperature;
     private String url;
 
-    public WeatherItem(long id, String city, String details, float temperature, String url, long lastUpdate){
+    public WeatherItem(long id, CityItem city, String details, float temperature, String url, long lastUpdate){
         this.id = id;
         this.city = city;
         this.details = details;
@@ -37,7 +37,7 @@ public class WeatherItem {
         return lastUpdate;
     }
 
-    public String city() {
+    public CityItem city() {
         return city;
     }
 
@@ -54,16 +54,16 @@ public class WeatherItem {
     }
 
     public static long insert(SQLiteDatabase db, WeatherItem item) throws SQLException{
-        return insert(db, item.city, item.details, item.temperature, item.url, item.lastUpdate);
+        return insert(db, item.details, item.temperature, item.url, item.city.id(), item.lastUpdate);
     }
 
-    public static long insert(SQLiteDatabase db, String city, String details, float temperature, String url, long lastUpdate) throws SQLException {
+    public static long insert(SQLiteDatabase db, String details, float temperature, String url, long city_fk, long lastUpdate) throws SQLException {
         ContentValues cv = new ContentValues(5);
 
-        cv.put(SearchHistoryEntity.COLUMN_CITY, city);
         cv.put(SearchHistoryEntity.COLUMN_DETAILS, details);
         cv.put(SearchHistoryEntity.COLUMN_TEMPERATURE, temperature);
         cv.put(SearchHistoryEntity.COLUMN_IMAGE_URL, url);
+        cv.put(SearchHistoryEntity.COLUMN_CITY_FK, city_fk);
         cv.put(SearchHistoryEntity.COLUMN_LAST_UPDATE, lastUpdate);
 
         return db.insertOrThrow(SearchHistoryEntity.TABLE_NAME, null, cv);
@@ -75,8 +75,8 @@ public class WeatherItem {
      * @param city
      * @return
      */
-    public static ArrayList<WeatherItem> load(SQLiteDatabase db, String city){
-        String where = String.format("%s = '%s'", SearchHistoryEntity.COLUMN_CITY, city);
+    public static ArrayList<WeatherItem> load(SQLiteDatabase db, long city){
+        String where = String.format("%s = %d", SearchHistoryEntity.COLUMN_CITY_FK, city);
         return rawQuery(db, where, null, null, null, SearchHistoryEntity.COLUMN_ID+" DESC");
     }
 
@@ -91,22 +91,26 @@ public class WeatherItem {
             result = new ArrayList<>();
 
             int columnIDIndex = rows.getColumnIndex(SearchHistoryEntity.COLUMN_ID);
-            int columnCityIndex = rows.getColumnIndex(SearchHistoryEntity.COLUMN_CITY);
             int columnDetailsIndex = rows.getColumnIndex(SearchHistoryEntity.COLUMN_DETAILS);
             int columnTemperatureIndex = rows.getColumnIndex(SearchHistoryEntity.COLUMN_TEMPERATURE);
             int columnURLIndex = rows.getColumnIndex(SearchHistoryEntity.COLUMN_IMAGE_URL);
+            int columnCityIndex = rows.getColumnIndex(SearchHistoryEntity.COLUMN_CITY_FK);
             int columnLastUpdateIndex = rows.getColumnIndex(SearchHistoryEntity.COLUMN_LAST_UPDATE);
 
             while (rows.moveToNext()) {
-                WeatherItem item = new WeatherItem(
-                        rows.getLong(columnIDIndex),
-                        rows.getString(columnCityIndex),
-                        rows.getString(columnDetailsIndex),
-                        rows.getFloat(columnTemperatureIndex),
-                        rows.getString(columnURLIndex),
-                        rows.getLong(columnLastUpdateIndex));
+                //TODO этого здесь быть не должно
+                CityItem city = CityItem.loadByID(db, rows.getLong(columnCityIndex));
+                if (city != null) {
+                    WeatherItem item = new WeatherItem(
+                            rows.getLong(columnIDIndex),
+                            city,
+                            rows.getString(columnDetailsIndex),
+                            rows.getFloat(columnTemperatureIndex),
+                            rows.getString(columnURLIndex),
+                            rows.getLong(columnLastUpdateIndex));
 
-                result.add(item);
+                    result.add(item);
+                }
             }
             result.trimToSize();
         }catch (Exception e){
