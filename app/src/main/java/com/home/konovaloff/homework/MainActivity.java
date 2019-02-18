@@ -3,7 +3,9 @@ package com.home.konovaloff.homework;
 import android.animation.Animator;
 import android.animation.ValueAnimator;
 import android.app.Activity;
-import android.content.DialogInterface;
+import android.app.SearchManager;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -15,44 +17,44 @@ import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarDrawerToggle;
-import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.animation.DecelerateInterpolator;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ProgressBar;
 import android.widget.SearchView;
 import android.widget.Toast;
 
+import com.home.konovaloff.homework.api.ServiceGenerator;
 import com.home.konovaloff.homework.global.Global;
 import com.home.konovaloff.homework.model.WeatherRequest;
 import com.home.konovaloff.homework.settings.AppSettings;
 import com.home.konovaloff.homework.settings.SettingsStorage;
 
 import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
 
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
 import retrofit2.http.GET;
 import retrofit2.http.Query;
 
-public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, View.OnClickListener{//, IListener
+public class MainActivity extends AppCompatActivity implements
+        NavigationView.OnNavigationItemSelectedListener,
+        View.OnClickListener,
+        MyDialogFragment.IDlgResult {//, IListener
+
     public static final String COM_WHATSAPP = "com.whatsapp";
     private static final String APP_DATA_STORAGE_NAME = "app.settings.storage";
     public static final int IDD_SELECT_PHOTO = 1;
@@ -105,24 +107,29 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         getSupportFragmentManager().addOnBackStackChangedListener(fragmentBackStackListener);
         super.onCreate(savedInstanceState);
 
-        bindContentView(R.layout.activity_main);
+        handler = new Handler();
 
-        this.setTitle(MyApp.getName());
+        bindContentView(R.layout.activity_main);
 
         settingsStorage = new SettingsStorage(this, APP_DATA_STORAGE_NAME);
         settings = settingsStorage.getSettings();
-        if (settings == null){
+        if (settings == null) {
             settings = AppSettings.getDefault(this);
         }
 
-        setSupportActionBar(toolbar);
-        ActionBar actionBar = getSupportActionBar();
-        if (actionBar != null) {
-            actionBar.setHomeButtonEnabled(true);
-            actionBar.setHomeAsUpIndicator(android.R.drawable.ic_menu_more);
-            actionBar.setDisplayHomeAsUpEnabled(true);
-        }
+        setupActionBar();
 
+        setupNavigation();
+
+        openWeather = ServiceGenerator.createService(OpenWeather.class);
+
+        if (savedInstanceState == null) {
+            showProgress(true);
+            requestRetrofit(settings.city(), Global.APIKEY);
+        }
+    }
+
+    private void setupNavigation() {
         drawerToggle = new ActionBarDrawerToggle(this, drawerLayout, toolbar, 0, 0);
         drawerToggle.setToolbarNavigationClickListener(navigationClickListener);
         drawerLayout.addDrawerListener(drawerToggle);
@@ -138,26 +145,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         navigation.setImageClickListener(this);
         navigation.setUserNameClickListener(this);
-
-        if (savedInstanceState == null) {
-            showProgress(true);
-            initRetorfit();
-            requestRetrofit(settings.city(), Global.APIKEY);
-        } else {
-            //Проверяем, может есть запущенные задачи, для восстановления прогресса
-            restoreInstanceState();
-        }
     }
 
-    private void initRetorfit() {
-        Retrofit retrofit;
-        retrofit = new Retrofit.Builder()
-                .baseUrl(Global.API)////Базовая часть адреса
-                .addConverterFactory(GsonConverterFactory.create()) //Конвертер, необходимый для преобразования JSON в объекты
-                .build();
-
-        //Создаем объект, при помощи которого будем выполнять запросы
-        openWeather = retrofit.create(OpenWeather.class);
+    private void setupActionBar() {
+        setSupportActionBar(toolbar);
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setHomeButtonEnabled(true);
+            actionBar.setHomeAsUpIndicator(android.R.drawable.ic_menu_more);
+            actionBar.setDisplayHomeAsUpEnabled(true);
+        }
     }
 
     private void requestRetrofit(String city, String keyApi) {
@@ -167,9 +164,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     public void onResponse(Call<WeatherRequest> call, Response<WeatherRequest> response) {
                         if (response.body() != null) {
                             Global.log_e(TAG, response.body().getBase());
+                            //Сохраняем в БД
                         }
+
                         Global.toast(getString(R.string.success));
                         showProgress(false);
+
+                        //Запускам фрагмент с информацией
+                        //Фрагменты с городами будем добавлять. Потом можно изменить на replace
+                        addFragment(FragmentWather.newInstance(settings.city()));
                     }
 
                     @Override
@@ -189,7 +192,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
             navigation.setUserImage(bitmap);
         } catch (Exception e) {
-            Global.log_e(TAG, e.toString());
+            navigation.setUserImage(getResources().getDrawable(android.R.drawable.btn_star_big_off));
         }
     }
 
@@ -205,23 +208,34 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     @Override
+    protected void onStart() {
+        super.onStart();
+        this.setTitle(settings.city());//MyApp.getName()
+    }
+
+    @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
+
         setupSearch(menu);
+
         return true;
     }
 
     private void setupSearch(Menu menu) {
         MenuItem search = menu.findItem(R.id.action_search); // Поиск пункта меню поиска
         SearchView searchText = (SearchView) search.getActionView(); // Строка поиска
+        SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
+        searchText.setSearchableInfo(searchManager.getSearchableInfo(new ComponentName(this, SearchableActivity.class)));
+        searchText.setIconifiedByDefault(false);
         searchText.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             // Реагирует на конец ввода поиска
             @Override
             public boolean onQueryTextSubmit(String query) {
                 settings.city(query);
                 settingsStorage.saveSettings(settings);
-                requestRetrofit(settings.city(), Global.APIKEY);
-                return true;
+//                requestRetrofit(settings.city(), Global.APIKEY);
+                return false;
             }
 
             // Реагирует на нажатие каждой клавиши
@@ -392,7 +406,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
      * Меняем логин и лого на дефолт
      */
     private void onSignOut() {
-        navigation.setUserName(getString(R.string.default_username));
+        //Удаляем настройки
+        settingsStorage.saveSettings(null);
+
+        //меняем на настройки по-умолчанию
+        settings = AppSettings.getDefault(this);
+
+        //Меняем в И/Ф
+        navigation.setUserName(settings.userName());
         navigation.setUserImage(getResources().getDrawable(android.R.drawable.btn_star_big_off));
     }
 
@@ -406,32 +427,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 startActivityForResult(photoPickerIntent, IDD_SELECT_PHOTO);
                 break;
             case R.id.app_navigation_username:
-                // Get the layout inflater
-                LayoutInflater inflater = getLayoutInflater();
-                View v = inflater.inflate(R.layout.username, null);
-                final EditText editText = v.findViewById(R.id.username);
-
-                new AlertDialog.Builder(this)
-                        .setTitle(R.string.caption_meet)
-                        .setView(v)
-                        .setPositiveButton(getString(R.string.change), new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int whichButton) {
-                                if (editText != null) {
-                                    navigation.setUserName(editText.getText().toString());
-
-                                    settings.userName(editText.getText().toString());
-                                    settingsStorage.saveSettings(settings);
-                                }
-                            }
-                        })
-                        .setNegativeButton(getString(R.string.cancel), new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int whichButton) {
-                                dialog.dismiss();
-                            }
-                        })
-                        .show();
-                break;
-            case R.id.btOK:
+                MyDialogFragment dlg = MyDialogFragment.newInstance(getString(R.string.caption_meet), settings.userName(), getString(R.string.bt_change), null);
+                dlg.setListener(this);
+                dlg.show(getSupportFragmentManager(), "");
 
                 break;
         }
@@ -453,6 +451,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                         setAvatar(path);
 
                         settings.logoPath(path.toString());
+                        settingsStorage.saveSettings(settings);
                     } catch (Exception e) {
                         Global.log_e(TAG, e.toString());
                     }
@@ -461,73 +460,52 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
     }
 
-//    @Override
-//    public void onTaskComplete(DummyTask task) {
-//        boolean res;
-//        try {
-//            res = task.get();
-//        } catch (Exception e) {
-//            res = false;
-//        }
-//
-//        if (res) {
-//            Global.toast(getString(R.string.success));
-//        } else {
-//            Global.toast(getString(R.string.err_runtime) + task.getLastError());
-//        }
-//
-//        showProgress(false);
-////        enableButton(btStartTask, true);
-//        //Возвращаем заголовок в исходное состояние
-//        setTitle(MyApp.getName());
-//    }
-//
-//    @Override
-//    public void onProgressUpdate(String txt) {
-//        //Статус прогресса будем показывать в заголовке
-//        this.setTitle(txt);
-//    }
-
     private void showProgress(boolean value) {
         if (progressBar != null) {
             progressBar.setVisibility(value ? View.VISIBLE : View.INVISIBLE);
         }
     }
 
-    private void restoreInstanceState() {
-        Object objCustomInstance = getLastCustomNonConfigurationInstance();
-        if (objCustomInstance != null && objCustomInstance instanceof java.util.Map) {
-            java.util.Map customInstance = (java.util.Map) objCustomInstance;
+    public void addFragment(Fragment fragment) {
+        FragmentManager fm = getSupportFragmentManager();
+        Fragment current = fm.findFragmentById(R.id.container);
 
-//            if (customInstance.containsKey(KEY_TASK)) {
-//                showProgress(true);
-//
-//                dummyTask = (DummyTask)customInstance.get(KEY_TASK);
-//                dummyTask.setListener(this);
-//
-////                enableButton(btStartTask, false);
-//            }
+        FragmentTransaction ft = fm.beginTransaction();
+
+        if (current == null) {
+            ft.add(R.id.container, fragment);
+        } else {
+            String backStateName =  fragment.getClass().getName();
+            boolean fragmentPopped = fm.popBackStackImmediate (backStateName, 0);
+
+            if (!fragmentPopped) {
+                ft.replace(R.id.container, fragment);
+                ft.addToBackStack(null);
+            }
         }
+
+        ft.commit();
     }
 
+    /**
+     * TODO добавить id для многократного использования
+     *
+     * @param result
+     */
     @Override
-    public Object onRetainCustomNonConfigurationInstance() {
-        Map<String, Object> customInstance = new HashMap<>();
+    public void onDialogResult(byte result, MyDialogFragment sender) {
+        switch (result) {
+            case MyDialogFragment.RESULT_YES:
+                navigation.setUserName(sender.getInputText());
 
-        //Отвязываемся от активности
-//        if (dummyTask != null) {
-//            dummyTask.setListener(null);
-//            customInstance.put(KEY_TASK, dummyTask);
-//            dummyTask = null;
-//        }
-
-        return customInstance.isEmpty() ?
-                super.onRetainCustomNonConfigurationInstance() : customInstance;
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
+                settings.userName(sender.getInputText());
+                settingsStorage.saveSettings(settings);
+                break;
+            case MyDialogFragment.RESULT_NO:
+                break;
+            case MyDialogFragment.RESULT_CANCEL:
+                break;
+        }
     }
 
 }

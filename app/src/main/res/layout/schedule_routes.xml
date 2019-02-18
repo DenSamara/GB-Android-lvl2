@@ -16,6 +16,6 @@
         android:textAppearance="?android:attr/textAppearanceLarge" />
 
     <include
-        layout="@layout/button_row" />
+        layout="@layout/fragment_weather" />
 
 </LinearLayout>

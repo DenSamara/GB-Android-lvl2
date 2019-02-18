@@ -7,9 +7,8 @@ import android.widget.Toast;
 import com.home.konovaloff.homework.MyApp;
 
 public class Global {
-    private final static boolean showDebugInfo = true;
-    public final static String API = "http://api.openweathermap.org/";
     public final static String APIKEY = "c1346f4fe62c16f203d047b15aeafd21";
+    private final static boolean showDebugInfo = true;
 
     public static void toast(Context ctx, String text){
         Toast.makeText(ctx, text, Toast.LENGTH_SHORT).show();

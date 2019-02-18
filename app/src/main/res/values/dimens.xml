@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="padding">16dp</dimen>
+    <dimen name="weather_logo_width">128dp</dimen>
+    <dimen name="weather_logo_height">128dp</dimen>
+    <dimen name="temperature_font_size">40sp</dimen>
+</resources>
