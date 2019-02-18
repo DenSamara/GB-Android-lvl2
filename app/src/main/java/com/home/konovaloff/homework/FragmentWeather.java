@@ -11,40 +11,36 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.engine.DiskCacheStrategy;
-import com.bumptech.glide.request.RequestOptions;
 import com.home.konovaloff.homework.global.Global;
+import com.home.konovaloff.homework.model.CityItem;
+import com.home.konovaloff.homework.model.DB.DBHelper;
+import com.home.konovaloff.homework.model.WeatherItem;
+
+import java.util.ArrayList;
 
 /**
  * Фрагмент для отображения погоды
  */
-public class FragmentWather extends Fragment {
-    public static final String TAG = FragmentWather.class.getSimpleName();
-    public static final String EXTRA_CITY = "FragmentWather.data";
+public class FragmentWeather extends Fragment {
+    public static final String TAG = FragmentWeather.class.getSimpleName();
+    public static final String EXTRA_CITY = "FragmentWeather.city";
 
-    public final static int IMAGE_DEFAULT = R.drawable.image_default;
-
-    public final static RequestOptions IMAGE_REQUEST_OPTIONS = new RequestOptions()
-            .centerCrop()
-            .placeholder(IMAGE_DEFAULT)
-            .error(IMAGE_DEFAULT)
-            .diskCacheStrategy(DiskCacheStrategy.ALL);
-
-    private String city;
+    private CityItem city;
 
     private TextView tvCity;
     private TextView tvLastUpdate;
     private TextView tvTemperature;
     private TextView tvDetails;
+    private WeatherItem weather;
 
     private ImageView imageWeather;
-//    DbHelper helper;
+    DBHelper helper;
 
-    public static FragmentWather newInstance(String city) {
+    public static FragmentWeather newInstance(CityItem city) {
         Bundle args = new Bundle();
-        args.putString(EXTRA_CITY, city);
+        args.putParcelable(EXTRA_CITY, city);
 
-        FragmentWather fragment = new FragmentWather();
+        FragmentWeather fragment = new FragmentWeather();
         fragment.setArguments(args);
         return fragment;
     }
@@ -53,7 +49,8 @@ public class FragmentWather extends Fragment {
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        city = getArguments().getString(EXTRA_CITY);
+        city = getArguments().getParcelable(EXTRA_CITY);
+        helper = new DBHelper(getActivity());
     }
 
     @Nullable
@@ -68,12 +65,15 @@ public class FragmentWather extends Fragment {
 
         bind(view);
 
-        tvCity.setText(city);
-        tvLastUpdate.setText(Formatter.formatDateTime(System.currentTimeMillis()));
-        Glide.with(this)
-                .load("https://c1.staticflickr.com/1/186/31520440226_175445c41a_b.jpg")
-                .apply(IMAGE_REQUEST_OPTIONS)
-                .into(imageWeather);
+        //Загружаем информацию из БД
+        //TODO убрать загрузку из основного потока
+        if (city != null) {
+            ArrayList<WeatherItem> items = WeatherItem.load(helper.getReadableDatabase(), city.id());
+            if (items != null && items.size() > 0) {
+                WeatherItem last = items.get(0);
+                showData(last);
+            }
+        }
     }
 
     private void bind(View v) {
@@ -82,5 +82,17 @@ public class FragmentWather extends Fragment {
         imageWeather = v.findViewById(R.id.weather_icon);
         tvTemperature = v.findViewById(R.id.current_temperature_field);
         tvDetails = v.findViewById(R.id.details_field);
+    }
+
+    private void showData(WeatherItem item) {
+        tvCity.setText(item.city().cityName());
+        tvLastUpdate.setText(Formatter.formatDateTime(item.lastUpdate()));
+
+        Glide.with(this)
+                .load(item.imageUrl())
+                .apply(Global.IMAGE_REQUEST_OPTIONS)
+                .into(imageWeather);
+        tvTemperature.setText(Formatter.formatTemperature(item.temperature()));
+        tvDetails.setText(item.details());
     }
 }

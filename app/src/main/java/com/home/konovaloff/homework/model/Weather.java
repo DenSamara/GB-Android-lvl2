@@ -7,12 +7,15 @@ public class Weather {
     @SerializedName("id")
     @Expose
     private int id;
+
     @SerializedName("main")
     @Expose
     private String main;
+
     @SerializedName("description")
     @Expose
     private String description;
+
     @SerializedName("icon")
     @Expose
     private String icon;

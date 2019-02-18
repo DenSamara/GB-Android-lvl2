@@ -8,6 +8,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
@@ -38,6 +39,11 @@ import android.widget.Toast;
 
 import com.home.konovaloff.homework.api.ServiceGenerator;
 import com.home.konovaloff.homework.global.Global;
+import com.home.konovaloff.homework.model.CityItem;
+import com.home.konovaloff.homework.model.DB.CityEntity;
+import com.home.konovaloff.homework.model.DB.DBHelper;
+import com.home.konovaloff.homework.model.DB.SearchHistoryEntity;
+import com.home.konovaloff.homework.model.WeatherItem;
 import com.home.konovaloff.homework.model.WeatherRequest;
 import com.home.konovaloff.homework.settings.AppSettings;
 import com.home.konovaloff.homework.settings.SettingsStorage;
@@ -78,6 +84,9 @@ public class MainActivity extends AppCompatActivity implements
 
     //Lesson 6. Retrofit+GSON
     private OpenWeather openWeather;
+
+    //Lesson 7.
+    private DBHelper helper;
 
     public interface OpenWeather {
         @GET("data/2.5/weather")
@@ -122,10 +131,11 @@ public class MainActivity extends AppCompatActivity implements
         setupNavigation();
 
         openWeather = ServiceGenerator.createService(OpenWeather.class);
+        helper = new DBHelper(MainActivity.this);
 
         if (savedInstanceState == null) {
             showProgress(true);
-            requestRetrofit(settings.city(), Global.APIKEY);
+            requestRetrofit(settings.city().cityName(), Global.APIKEY);
         }
     }
 
@@ -163,16 +173,22 @@ public class MainActivity extends AppCompatActivity implements
                     @Override
                     public void onResponse(Call<WeatherRequest> call, Response<WeatherRequest> response) {
                         if (response.body() != null) {
-                            Global.log_e(TAG, response.body().getBase());
                             //Сохраняем в БД
+                            //TODO убрать из основного потока
+                            WeatherItem item = parseResponse(response);
+                            WeatherItem.insert(helper.getWritableDatabase(), item);
+
+                            settings.city(item.city());
+                            settingsStorage.saveSettings(settings);
                         }
 
                         Global.toast(getString(R.string.success));
                         showProgress(false);
 
                         //Запускам фрагмент с информацией
-                        //Фрагменты с городами будем добавлять. Потом можно изменить на replace
-                        addFragment(FragmentWather.newInstance(settings.city()));
+                        //Пока фрагменты с городами будем добавлять
+                        //Потом нужно проверить его существование и обновить только данные в нём
+                        addFragment(FragmentWeather.newInstance(settings.city()));
                     }
 
                     @Override
@@ -182,6 +198,32 @@ public class MainActivity extends AppCompatActivity implements
                         showProgress(false);
                     }
                 });
+    }
+
+    private WeatherItem parseResponse(Response<WeatherRequest> response) {
+        CityItem city = CityItem.find(helper.getReadableDatabase(), response.body().getName(), response.body().getSys().getCountry());
+        //Если такое сочетание города-страны не нашли - вставляем
+        if (city == null){
+            city = new CityItem(-1, response.body().getName(), response.body().getSys().getCountry());
+            long city_id = CityItem.insert(helper.getWritableDatabase(), city);
+            city.id(city_id);
+        }
+
+        String details = String.format("%s\n%s %s\n%s %s\n%s %.0f degrees, %s ms",
+                response.body().getWeather()[0].getDescription(),
+                getString(R.string.humidity), response.body().getMain().getHumidity(),
+                getString(R.string.pressure), response.body().getMain().getPressure(),
+                getString(R.string.wind), response.body().getWind().getDeg(), response.body().getWind().getSpeed()
+                );
+
+        String imageUrl = String.format(getString(R.string.icon_url), response.body().getWeather()[0].getIcon());
+
+        return new WeatherItem(-1,
+                city, //city
+                details,   //details
+                response.body().getMain().getTemp(),                //temp
+                imageUrl,          //url
+                System.currentTimeMillis());
     }
 
 
@@ -210,7 +252,7 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     protected void onStart() {
         super.onStart();
-        this.setTitle(settings.city());//MyApp.getName()
+        this.setTitle(MyApp.getName());//
     }
 
     @Override
@@ -232,9 +274,10 @@ public class MainActivity extends AppCompatActivity implements
             // Реагирует на конец ввода поиска
             @Override
             public boolean onQueryTextSubmit(String query) {
-                settings.city(query);
-                settingsStorage.saveSettings(settings);
-//                requestRetrofit(settings.city(), Global.APIKEY);
+//                settings.city(query);
+//                settingsStorage.saveSettings(settings);
+
+                requestRetrofit(query, Global.APIKEY);
                 return false;
             }
 
@@ -251,7 +294,7 @@ public class MainActivity extends AppCompatActivity implements
         boolean res;
         switch (item.getItemId()) {
             case R.id.menu_refresh:
-                requestRetrofit(settings.city(), Global.APIKEY);
+                requestRetrofit(settings.city().cityName(), Global.APIKEY);
                 res = true;
                 break;
             default:
@@ -408,6 +451,20 @@ public class MainActivity extends AppCompatActivity implements
     private void onSignOut() {
         //Удаляем настройки
         settingsStorage.saveSettings(null);
+
+        //Очищаем таблицы в БД
+        SQLiteDatabase db = helper.getWritableDatabase();
+        try{
+            CityEntity.clear(db);
+        }catch (Exception e){
+            Global.log_e(TAG, e.toString());
+        }
+
+        try{
+            SearchHistoryEntity.clear(db);
+        }catch (Exception e){
+            Global.log_e(TAG, e.toString());
+        }
 
         //меняем на настройки по-умолчанию
         settings = AppSettings.getDefault(this);
