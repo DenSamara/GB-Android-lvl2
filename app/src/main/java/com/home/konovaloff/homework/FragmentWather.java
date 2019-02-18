@@ -22,14 +22,6 @@ public class FragmentWather extends Fragment {
     public static final String TAG = FragmentWather.class.getSimpleName();
     public static final String EXTRA_CITY = "FragmentWather.data";
 
-    public final static int IMAGE_DEFAULT = R.drawable.image_default;
-
-    public final static RequestOptions IMAGE_REQUEST_OPTIONS = new RequestOptions()
-            .centerCrop()
-            .placeholder(IMAGE_DEFAULT)
-            .error(IMAGE_DEFAULT)
-            .diskCacheStrategy(DiskCacheStrategy.ALL);
-
     private String city;
 
     private TextView tvCity;
@@ -71,8 +63,8 @@ public class FragmentWather extends Fragment {
         tvCity.setText(city);
         tvLastUpdate.setText(Formatter.formatDateTime(System.currentTimeMillis()));
         Glide.with(this)
-                .load("https://c1.staticflickr.com/1/186/31520440226_175445c41a_b.jpg")
-                .apply(IMAGE_REQUEST_OPTIONS)
+                .load("http://oreninform.ru/upload/iblock/e52/nTBMRkETA.jpeg")
+                .apply(Global.IMAGE_REQUEST_OPTIONS)
                 .into(imageWeather);
     }
 
