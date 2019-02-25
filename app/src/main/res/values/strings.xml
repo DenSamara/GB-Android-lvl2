@@ -6,6 +6,7 @@
     <string name="default_date">01.01.2019</string>
     <string name="default_city">Samara</string>
     <string name="default_temp">24</string>
+    <string name="default_country">RU</string>
 
     <!-- MENU -->
     <string name="menu_add">Добавить</string>
@@ -35,6 +36,7 @@
     <!-- ERRORS -->
     <string name="err_whatsapp_is_not_installed">WhatsApp не установлен</string>
     <string name="err_runtime">Ошибка выполнения: </string>
+    <string name="err_define_location">Не удалось определить местоположение</string>
 
     <!-- COMMON -->
     <string name="empty"> </string>
@@ -44,6 +46,10 @@
     <string name="cancel">Отмена</string>
     <string name="prepare">Подготовка</string>
     <string name="done">Выполнено</string>
+
+    <string name="humidity">Humidity</string>
+    <string name="pressure">Pressure</string>
+    <string name="wind">Wind</string>
 
     <!-- PREFERENCES -->
     <string name="pref_ava_path">preference_avatar</string>
@@ -56,4 +62,6 @@
     <!-- TEXT -->
     <string name="about_item_text">Автор: Коновалов Денис. Проект выполнен в качестве домашнего задания в рамках обучения программированию для платформы Android</string>
     <string name="hint_username">@string/username</string>
+
+    <string name="icon_url">http://openweathermap.org/img/w/%s.png</string>
 </resources>

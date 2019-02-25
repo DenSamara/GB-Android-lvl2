@@ -10,4 +10,8 @@ public class Formatter {
     public static String formatDateTime(long datetime){
         return sdfLastUpdate.format(datetime);
     }
+
+    public static String formatTemperature(float value){
+        return String.format("%.1f", value);
+    }
 }

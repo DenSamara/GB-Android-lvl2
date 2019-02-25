@@ -44,7 +44,6 @@ public class SearchableActivity extends AppCompatActivity {
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             actionBar.setHomeButtonEnabled(true);
-            actionBar.setHomeAsUpIndicator(android.R.drawable.ic_menu_more);
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
     }

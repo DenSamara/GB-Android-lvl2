@@ -1,22 +1,28 @@
 package com.home.konovaloff.homework;
 
+import android.Manifest;
 import android.animation.Animator;
 import android.animation.ValueAnimator;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.SearchManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.PersistableBundle;
 import android.support.annotation.LayoutRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.NavigationView;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
@@ -36,8 +42,17 @@ import android.widget.ProgressBar;
 import android.widget.SearchView;
 import android.widget.Toast;
 
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.home.konovaloff.homework.api.ServiceGenerator;
 import com.home.konovaloff.homework.global.Global;
+import com.home.konovaloff.homework.model.CityItem;
+import com.home.konovaloff.homework.model.Coord;
+import com.home.konovaloff.homework.model.db.CityEntity;
+import com.home.konovaloff.homework.model.db.DBHelper;
+import com.home.konovaloff.homework.model.db.SearchHistoryEntity;
+import com.home.konovaloff.homework.model.WeatherItem;
 import com.home.konovaloff.homework.model.WeatherRequest;
 import com.home.konovaloff.homework.settings.AppSettings;
 import com.home.konovaloff.homework.settings.SettingsStorage;
@@ -47,19 +62,24 @@ import java.io.InputStream;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import retrofit2.http.Body;
+import retrofit2.http.Field;
 import retrofit2.http.GET;
 import retrofit2.http.Query;
 
 public class MainActivity extends AppCompatActivity implements
         NavigationView.OnNavigationItemSelectedListener,
         View.OnClickListener,
-        MyDialogFragment.IDlgResult {//, IListener
-
+        MyDialogFragment.IDlgResult,
+        ActivityCompat.OnRequestPermissionsResultCallback {//, IListener
     public static final String COM_WHATSAPP = "com.whatsapp";
-    private static final String APP_DATA_STORAGE_NAME = "app.settings.storage";
     public static final int IDD_SELECT_PHOTO = 1;
 
     private static final String TAG = MainActivity.class.getSimpleName();
+    private static final int PERMISSION_REQUEST_CODE = 10;
+    private static final String APP_DATA_STORAGE_NAME = "app.settings.storage";
+    private static final String EXTRA_LATITUDE = "extra_latitude";
+    private static final String EXTRA_LONGITUDE = "extra_longitude";
 
     private DrawerLayout drawerLayout;
     private DrawerNavigation navigation;
@@ -72,6 +92,7 @@ public class MainActivity extends AppCompatActivity implements
      * Нужен для реализации двойного нажатия
      */
     private Handler handler;
+
     private boolean doubleBackPress;
     private AppSettings settings;
     private SettingsStorage settingsStorage;
@@ -79,9 +100,24 @@ public class MainActivity extends AppCompatActivity implements
     //Lesson 6. Retrofit+GSON
     private OpenWeather openWeather;
 
+    //Lesson 7.
+    private DBHelper helper;
+
+    //Lesson 9.
+    private Coord latLong;
+
+//    public interface OpenWeather {
+//        @GET("data/2.5/weather")
+//        Call<WeatherRequest> loadWeather(@Query("q") String cityCountry, @Query("appid") String keyApi);
+//    }
+
+    public interface CoordService {
+        void createLatLong(@Body Coord coord, Callback<Coord> cb);
+    }
+
     public interface OpenWeather {
         @GET("data/2.5/weather")
-        Call<WeatherRequest> loadWeather(@Query("q") String cityCountry, @Query("appid") String keyApi);
+        Call<WeatherRequest> loadWeather(@Query("lat") float lat, @Query("lon") float lon, @Query("appid") String keyApi);
     }
 
     private final View.OnClickListener navigationClickListener =
@@ -122,10 +158,45 @@ public class MainActivity extends AppCompatActivity implements
         setupNavigation();
 
         openWeather = ServiceGenerator.createService(OpenWeather.class);
+        helper = new DBHelper(MainActivity.this);
 
         if (savedInstanceState == null) {
             showProgress(true);
-            requestRetrofit(settings.city(), Global.APIKEY);
+//            requestRetrofitByCity(settings.city(), Global.APIKEY);
+
+            requestPermission();
+        }else {
+            //Для поворота экрана
+            latLong = new Coord();
+            latLong.setLat(savedInstanceState.getFloat(EXTRA_LATITUDE));
+            latLong.setLon(savedInstanceState.getFloat(EXTRA_LONGITUDE));
+        }
+    }
+
+    private void requestPermission() {
+        // Проверим на разрешения, и если их нет - запросим у пользователя
+        if (ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                || ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            // запросим координаты
+            requestLocation();
+        } else {
+            // разрешений нет, будем запрашивать у пользователя
+            requestLocationPermissions();
+        }
+    }
+
+    // Запрос разрешения для геолокации
+    private void requestLocationPermissions() {
+        if (!ActivityCompat.shouldShowRequestPermissionRationale(this,
+                Manifest.permission.ACCESS_FINE_LOCATION)) {
+            // Запросим разрешения у пользователя
+            ActivityCompat.requestPermissions(this,
+                    new String[]{
+                            Manifest.permission.ACCESS_FINE_LOCATION
+                    },
+                    PERMISSION_REQUEST_CODE);
         }
     }
 
@@ -157,31 +228,65 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
-    private void requestRetrofit(String city, String keyApi) {
-        openWeather.loadWeather(city, keyApi)
+    private void requestRetrofit(Coord latLong, String keyApi) {
+        if (latLong == null) return;
+
+        openWeather.loadWeather(latLong.getLat(), latLong.getLon(), keyApi)
                 .enqueue(new Callback<WeatherRequest>() {
                     @Override
                     public void onResponse(Call<WeatherRequest> call, Response<WeatherRequest> response) {
                         if (response.body() != null) {
-                            Global.log_e(TAG, response.body().getBase());
                             //Сохраняем в БД
+                            //TODO убрать из основного потока
+                            WeatherItem item = parseResponse(response);
+                            WeatherItem.insert(helper.getWritableDatabase(), item);
+
+                            settings.city(item.city());
+                            settingsStorage.saveSettings(settings);
                         }
 
                         Global.toast(getString(R.string.success));
                         showProgress(false);
 
                         //Запускам фрагмент с информацией
-                        //Фрагменты с городами будем добавлять. Потом можно изменить на replace
-                        addFragment(FragmentWather.newInstance(settings.city()));
+                        //Пока фрагменты с городами будем добавлять
+                        //Потом нужно проверить его существование и обновить только данные в нём
+                        addFragment(FragmentWeather.newInstance(settings.city()));
                     }
 
                     @Override
                     public void onFailure(Call<WeatherRequest> call, Throwable t) {
-                        Global.log_e(TAG, call.toString());
+                        Global.logE(TAG, call.toString());
                         Global.toast(call.toString());
                         showProgress(false);
                     }
                 });
+    }
+
+    private WeatherItem parseResponse(Response<WeatherRequest> response) {
+        CityItem city = CityItem.find(helper.getReadableDatabase(), response.body().getName(), response.body().getSys().getCountry());
+        //Если такое сочетание города-страны не нашли - вставляем
+        if (city == null) {
+            city = new CityItem(-1, response.body().getName(), response.body().getSys().getCountry());
+            long city_id = CityItem.insert(helper.getWritableDatabase(), city);
+            city.id(city_id);
+        }
+
+        String details = String.format("%s\n%s %s\n%s %s\n%s %.0f degrees, %s ms",
+                response.body().getWeather()[0].getDescription(),
+                getString(R.string.humidity), response.body().getMain().getHumidity(),
+                getString(R.string.pressure), response.body().getMain().getPressure(),
+                getString(R.string.wind), response.body().getWind().getDeg(), response.body().getWind().getSpeed()
+        );
+
+        String imageUrl = String.format(getString(R.string.icon_url), response.body().getWeather()[0].getIcon());
+
+        return new WeatherItem(-1,
+                city, //city
+                details,   //details
+                response.body().getMain().getTemp(),                //temp
+                imageUrl,          //url
+                System.currentTimeMillis());
     }
 
 
@@ -210,7 +315,7 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     protected void onStart() {
         super.onStart();
-        this.setTitle(settings.city());//MyApp.getName()
+        this.setTitle(MyApp.getName());//
     }
 
     @Override
@@ -232,9 +337,10 @@ public class MainActivity extends AppCompatActivity implements
             // Реагирует на конец ввода поиска
             @Override
             public boolean onQueryTextSubmit(String query) {
-                settings.city(query);
-                settingsStorage.saveSettings(settings);
-//                requestRetrofit(settings.city(), Global.APIKEY);
+//                settings.city(query);
+//                settingsStorage.saveSettings(settings);
+                //TODO Добавить выбор страны
+//                requestRetrofit(query, Global.APIKEY);
                 return false;
             }
 
@@ -251,7 +357,8 @@ public class MainActivity extends AppCompatActivity implements
         boolean res;
         switch (item.getItemId()) {
             case R.id.menu_refresh:
-                requestRetrofit(settings.city(), Global.APIKEY);
+//                requestRetrofitByCity(settings.city(), Global.APIKEY);
+                requestRetrofit(latLong, Global.APIKEY);
                 res = true;
                 break;
             default:
@@ -409,6 +516,20 @@ public class MainActivity extends AppCompatActivity implements
         //Удаляем настройки
         settingsStorage.saveSettings(null);
 
+        //Очищаем таблицы в БД
+        SQLiteDatabase db = helper.getWritableDatabase();
+        try {
+            CityEntity.clear(db);
+        } catch (Exception e) {
+            Global.logE(TAG, e.toString());
+        }
+
+        try {
+            SearchHistoryEntity.clear(db);
+        } catch (Exception e) {
+            Global.logE(TAG, e.toString());
+        }
+
         //меняем на настройки по-умолчанию
         settings = AppSettings.getDefault(this);
 
@@ -453,7 +574,7 @@ public class MainActivity extends AppCompatActivity implements
                         settings.logoPath(path.toString());
                         settingsStorage.saveSettings(settings);
                     } catch (Exception e) {
-                        Global.log_e(TAG, e.toString());
+                        Global.logE(TAG, e.toString());
                     }
                     break;
             }
@@ -475,8 +596,8 @@ public class MainActivity extends AppCompatActivity implements
         if (current == null) {
             ft.add(R.id.container, fragment);
         } else {
-            String backStateName =  fragment.getClass().getName();
-            boolean fragmentPopped = fm.popBackStackImmediate (backStateName, 0);
+            String backStateName = fragment.getClass().getName();
+            boolean fragmentPopped = fm.popBackStackImmediate(backStateName, 0);
 
             if (!fragmentPopped) {
                 ft.replace(R.id.container, fragment);
@@ -508,4 +629,45 @@ public class MainActivity extends AppCompatActivity implements
         }
     }
 
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
+                                           @NonNull int[] grantResults) {
+        // Это то разрешение, что мы запрашивали?
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            if (grantResults.length == 1 &&
+                    grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // разрешение дано
+                requestLocation();
+            }
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private void requestLocation() {
+        FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        fusedLocationClient.getLastLocation()
+                .addOnSuccessListener(this, new OnSuccessListener<Location>() {
+                    @Override
+                    public void onSuccess(Location location) {
+                        // Got last known location (in some rare situations this can be null)
+                        if (location != null) {
+                            latLong = new Coord();
+                            latLong.setLat((float) location.getLatitude());    // Широта
+                            latLong.setLon((float) location.getLongitude());  // Долгота
+
+                            //TODO получить город по координатам
+                            requestRetrofit(latLong, Global.APIKEY);
+                        } else
+                            Global.toast(getString(R.string.err_define_location));
+                    }
+                });
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState, PersistableBundle outPersistentState) {
+        outState.putFloat(EXTRA_LATITUDE, latLong.getLat());
+        outState.putFloat(EXTRA_LONGITUDE, latLong.getLon());
+
+        super.onSaveInstanceState(outState, outPersistentState);
+    }
 }

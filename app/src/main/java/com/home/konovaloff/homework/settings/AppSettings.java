@@ -3,17 +3,18 @@ package com.home.konovaloff.homework.settings;
 import android.content.Context;
 
 import com.home.konovaloff.homework.R;
+import com.home.konovaloff.homework.model.CityItem;
 
 public class AppSettings {
     private String userName;
-    private String city;
+    private CityItem city;
     private String logoPath;
 
     public static AppSettings getDefault(Context ctx){
-        return new AppSettings(ctx.getString(R.string.default_username), null, ctx.getString(R.string.default_city));
+        return new AppSettings(ctx.getString(R.string.default_username), null, new CityItem(-1, ctx.getString(R.string.default_city), ctx.getString(R.string.default_country)));
     }
 
-    public AppSettings(String userName, String logoPath, String city){
+    public AppSettings(String userName, String logoPath, CityItem city){
         this.userName = userName;
         this.logoPath = logoPath;
         this.city = city;
@@ -27,11 +28,11 @@ public class AppSettings {
         this.userName = userName;
     }
 
-    public String city() {
+    public CityItem city() {
         return city;
     }
 
-    public void city(String city) {
+    public void city(CityItem city) {
         this.city = city;
     }
 
