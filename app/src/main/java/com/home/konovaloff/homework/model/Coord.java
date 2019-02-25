@@ -3,6 +3,8 @@ package com.home.konovaloff.homework.model;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
+import java.util.Locale;
+
 public class Coord {
     @SerializedName("lon")
     @Expose
@@ -27,4 +29,8 @@ public class Coord {
         this.lon = lon;
     }
 
+    @Override
+    public String toString() {
+        return String.format(Locale.ENGLISH, "lat=%.0f&lon=%.0f", lat, lon);
+    }
 }

@@ -30,15 +30,15 @@ public class Global {
         toast(MyApp.getContext(), text);
     }
 
-    public static void log_e(String tag, String text) {
+    public static void logE(String tag, String text) {
         if (showDebugInfo) Log.e(tag, text);
     }
 
-    public static void log_w(String tag, String text) {
+    public static void logW(String tag, String text) {
         if (showDebugInfo) Log.w(tag, text);
     }
 
-    public static void log_i(String tag, String text) {
+    public static void logI(String tag, String text) {
         if (showDebugInfo) Log.i(tag, text);
     }
 }

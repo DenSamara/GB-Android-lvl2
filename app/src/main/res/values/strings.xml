@@ -36,6 +36,7 @@
     <!-- ERRORS -->
     <string name="err_whatsapp_is_not_installed">WhatsApp не установлен</string>
     <string name="err_runtime">Ошибка выполнения: </string>
+    <string name="err_define_location">Не удалось определить местоположение</string>
 
     <!-- COMMON -->
     <string name="empty"> </string>

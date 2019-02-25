@@ -6,7 +6,7 @@ import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 
 import com.home.konovaloff.homework.global.Global;
-import com.home.konovaloff.homework.model.DB.SearchHistoryEntity;
+import com.home.konovaloff.homework.model.db.SearchHistoryEntity;
 
 import java.util.ArrayList;
 
@@ -114,7 +114,7 @@ public class WeatherItem {
             }
             result.trimToSize();
         }catch (Exception e){
-            Global.log_e(TAG, e.toString());
+            Global.logE(TAG, e.toString());
         }finally {
             if (rows != null) rows.close();
         }

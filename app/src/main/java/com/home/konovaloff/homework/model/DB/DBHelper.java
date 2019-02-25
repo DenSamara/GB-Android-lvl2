@@ -1,4 +1,4 @@
-package com.home.konovaloff.homework.model.DB;
+package com.home.konovaloff.homework.model.db;
 
 
 import android.content.Context;
@@ -37,7 +37,7 @@ public class DBHelper extends SQLiteOpenHelper {
         try{
             db.execSQL(query);
         }catch (Exception e){
-            Global.log_e(TAG, e.toString());
+            Global.logE(TAG, e.toString());
         }
     }
 
@@ -48,7 +48,7 @@ public class DBHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        Global.log_i(TAG, String.format("Обновление с %d версии до %d", oldVersion, newVersion));
+        Global.logI(TAG, String.format("Обновление с %d версии до %d", oldVersion, newVersion));
 
         switch (oldVersion){
             case 1:

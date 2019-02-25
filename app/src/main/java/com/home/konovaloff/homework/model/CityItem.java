@@ -8,7 +8,7 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 import com.home.konovaloff.homework.global.Global;
-import com.home.konovaloff.homework.model.DB.CityEntity;
+import com.home.konovaloff.homework.model.db.CityEntity;
 
 import java.util.ArrayList;
 
@@ -151,7 +151,7 @@ public class CityItem implements Parcelable {
             }
             result.trimToSize();
         }catch (Exception e){
-            Global.log_e(TAG, e.toString());
+            Global.logE(TAG, e.toString());
         }finally {
             if (rows != null) rows.close();
         }
@@ -169,5 +169,10 @@ public class CityItem implements Parcelable {
         dest.writeLong(id);
         dest.writeString(cityName);
         dest.writeString(country);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%s,%s", cityName, country);
     }
 }

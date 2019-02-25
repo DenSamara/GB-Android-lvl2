@@ -49,7 +49,7 @@ public class MyApp extends Application {
             packageInfo = INSTANCE.getPackageManager()
                     .getPackageInfo(INSTANCE.getPackageName(), 0);
         } catch (PackageManager.NameNotFoundException e) {
-            Global.log_e(TAG, e.toString());
+            Global.logE(TAG, e.toString());
         }
 
         if (packageInfo != null) {

@@ -13,7 +13,7 @@ import android.widget.TextView;
 import com.bumptech.glide.Glide;
 import com.home.konovaloff.homework.global.Global;
 import com.home.konovaloff.homework.model.CityItem;
-import com.home.konovaloff.homework.model.DB.DBHelper;
+import com.home.konovaloff.homework.model.db.DBHelper;
 import com.home.konovaloff.homework.model.WeatherItem;
 
 import java.util.ArrayList;

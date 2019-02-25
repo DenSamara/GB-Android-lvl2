@@ -1,4 +1,4 @@
-package com.home.konovaloff.homework.model.DB;
+package com.home.konovaloff.homework.model.db;
 
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
