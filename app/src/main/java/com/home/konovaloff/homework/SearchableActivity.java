@@ -3,12 +3,10 @@ package com.home.konovaloff.homework;
 import android.app.SearchManager;
 import android.content.Intent;
 import android.provider.SearchRecentSuggestions;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.Toolbar;
-
-import com.home.konovaloff.homework.global.Global;
+import androidx.appcompat.widget.Toolbar;
 
 public class SearchableActivity extends AppCompatActivity {
 
